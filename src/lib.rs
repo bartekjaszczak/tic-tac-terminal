@@ -1,23 +1,7 @@
-use std::{fmt, io};
-
-#[derive(Clone, Copy, PartialEq)]
-enum Cell {
-    Empty(usize),
-    O,
-    X,
-}
-
-impl fmt::Display for Cell {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let val = match *self {
-            Cell::Empty(index) => format!("[{index}]"),
-            Cell::O => String::from(" O "),
-            Cell::X => String::from(" X "),
-        };
-
-        write!(f, "{val}")
-    }
-}
+use std::{
+    fmt,
+    io::{self, Write},
+};
 
 const WIN_CASES: [[usize; 3]; 8] = [
     [0, 3, 6], // 1st column
@@ -30,11 +14,27 @@ const WIN_CASES: [[usize; 3]; 8] = [
     [2, 4, 6], // secondary diagonal
 ];
 
+struct Move {
+    index: usize,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Cell {
+    Empty(usize),
+    O,
+    X,
+}
+
 type Board = [Cell; 9];
+
+pub enum Player {
+    Human(String),
+    CPU,
+}
 
 #[derive(PartialEq)]
 enum GameResult {
-    PlayerWon(usize),
+    PlayerWon(usize), // holds index of the winner
     Draw,
 }
 
@@ -50,6 +50,84 @@ pub struct Game {
     players: [Player; 2],
     current_player: usize,
     game_state: GameState,
+}
+
+impl fmt::Display for Cell {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let val = match *self {
+            Cell::Empty(index) => format!("[{index}]"),
+            Cell::O => String::from(" O "),
+            Cell::X => String::from(" X "),
+        };
+
+        write!(f, "{val}")
+    }
+}
+
+impl fmt::Display for Move {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.marker())
+    }
+}
+
+impl Move {
+    fn try_new(num: usize) -> Result<Move, ()> {
+        if num < 1 || num > 9 {
+            return Err(());
+        }
+
+        Ok(Move { index: num - 1 })
+    }
+
+    fn index(&self) -> usize {
+        self.index
+    }
+
+    fn marker(&self) -> usize {
+        self.index + 1
+    }
+}
+
+impl Player {
+    fn get_move(&self, board: &Board) -> Move {
+        match self {
+            Self::Human(name) => Self::get_human_move(&name),
+            Self::CPU => Self::get_computer_move(board),
+        }
+    }
+
+    fn get_human_move(name: &str) -> Move {
+        print!("Your move, {name}! Enter a number: ");
+        io::stdout().flush().unwrap();
+
+        loop {
+            let mut buffer = String::new();
+            io::stdin().read_line(&mut buffer).unwrap();
+
+            break match buffer.trim().parse() {
+                Ok(number) => {
+                    let player_move = Move::try_new(number);
+                    match player_move {
+                        Ok(player_move) => player_move,
+                        Err(_) => {
+                            print!("Your input must be between 1 and 9! Try again: ");
+                            io::stdout().flush().unwrap();
+                            continue;
+                        }
+                    }
+                }
+                Err(_) => {
+                    print!("Your input must be a number between 1 and 9! Try again: ");
+                    io::stdout().flush().unwrap();
+                    continue;
+                }
+            };
+        }
+    }
+
+    fn get_computer_move(_board: &Board) -> Move {
+        Move::try_new(1).unwrap()
+    }
 }
 
 impl Game {
@@ -90,32 +168,31 @@ impl Game {
         clear_screen();
         self.print_board();
 
-        let board_index = loop {
-            let board_index = current_player.get_move(&self.board);
-            if self.is_valid_move(board_index - 1) {
-                break board_index - 1;
+        let player_move = loop {
+            let player_move = current_player.get_move(&self.board);
+            if self.is_valid_move(&player_move) {
+                break player_move;
             } else {
-                println!("'{board_index}' is not a valid board move!");
+                println!("There is already a marker in the '{}' cell!", &player_move);
             }
         };
 
-        self.current_player_make_move(board_index);
+        self.current_player_make_move(player_move);
     }
 
-    fn current_player_make_move(&mut self, board_index: usize) {
-        self.board[board_index] = if self.current_player == 0 {
+    fn current_player_make_move(&mut self, player_move: Move) {
+        self.board[player_move.index()] = if self.current_player == 0 {
             Cell::O
         } else {
             Cell::X
         };
     }
 
-    fn is_valid_move(&self, board_index: usize) -> bool {
-        board_index < 9
-            && match self.board[board_index] {
-                Cell::Empty(_) => true,
-                _ => false,
-            }
+    fn is_valid_move(&self, player_move: &Move) -> bool {
+        match self.board[player_move.index()] {
+            Cell::Empty(_) => true,
+            _ => false,
+        }
     }
 
     fn check_if_over(&mut self) {
@@ -151,13 +228,12 @@ impl Game {
 
         match self.game_state {
             GameState::Finished(GameResult::Draw) => println!("It's a draw!"),
-            GameState::Finished(GameResult::PlayerWon(player)) =>{
+            GameState::Finished(GameResult::PlayerWon(player)) => {
                 if let Player::Human(name) = &self.players[player] {
                     println!("{} won!", name);
                 }
-
-            },
-            _ => ()
+            }
+            _ => (),
         }
     }
 
@@ -191,39 +267,4 @@ impl Game {
 
 fn clear_screen() {
     print!("\x1B[2J\x1B[1;1H");
-}
-
-pub enum Player {
-    Human(String),
-    CPU,
-}
-
-impl Player {
-    fn get_move(&self, board: &Board) -> usize {
-        match self {
-            Self::Human(name) => Self::get_human_move(&name),
-            Self::CPU => Self::get_computer_move(board),
-        }
-    }
-
-    fn get_human_move(name: &str) -> usize {
-        println!("Your move, {name}! Enter a number: ");
-
-        loop {
-            let mut buffer = String::new();
-            io::stdin().read_line(&mut buffer).unwrap();
-
-            break match buffer.trim().parse() {
-                Ok(number) => number,
-                Err(_) => {
-                    println!("\nYour input is not a positive number! Try again:");
-                    continue;
-                }
-            };
-        }
-    }
-
-    fn get_computer_move(board: &Board) -> usize {
-        1
-    }
 }
