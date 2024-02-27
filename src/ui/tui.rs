@@ -8,6 +8,8 @@ use crossterm::{
 };
 use std::{cell::RefCell, io};
 
+const PREFIX: &str = " > ";
+
 pub struct TerminalUi {
     board: RefCell<Board>,
     winning_line: RefCell<Option<[usize; 3]>>,
@@ -19,7 +21,7 @@ impl Ui for TerminalUi {
             execute!(
                 io::stdout(),
                 Print(format!(
-                    "{}, {}. Try again: ",
+                    "{PREFIX}{}, {}. Try again: ",
                     player_name.green().bold(),
                     msg
                 ))
@@ -29,7 +31,7 @@ impl Ui for TerminalUi {
             execute!(
                 io::stdout(),
                 Print(format!(
-                    "{}, your move! Enter a number: ",
+                    "{PREFIX}{}, your move! Enter a number: ",
                     player_name.green().bold()
                 ))
             )
@@ -58,7 +60,7 @@ impl Ui for TerminalUi {
 
         self.draw_board();
 
-        execute!(io::stdout(), Print(message)).unwrap()
+        execute!(io::stdout(), Print(format!("{PREFIX}{message}"))).unwrap();
     }
 }
 
@@ -97,28 +99,28 @@ impl TerminalUi {
             io::stdout(),
             terminal::Clear(terminal::ClearType::All),
             cursor::MoveTo(0, 0),
-            Print("+-----+-----+-----+\n"),
-            Print("|     |     |     |\n"),
+            Print("\n   +-----+-----+-----+\n"),
+            Print("   |     |     |     |\n"),
             Print(format!(
-                "| {} | {} | {} |\n",
+                "   | {} | {} | {} |\n",
                 styled_cells[0], styled_cells[1], styled_cells[2]
             )),
-            Print("|     |     |     |\n"),
-            Print("+-----+-----+-----+\n"),
-            Print("|     |     |     |\n"),
+            Print("   |     |     |     |\n"),
+            Print("   +-----+-----+-----+\n"),
+            Print("   |     |     |     |\n"),
             Print(format!(
-                "| {} | {} | {} |\n",
+                "   | {} | {} | {} |\n",
                 styled_cells[3], styled_cells[4], styled_cells[5]
             )),
-            Print("|     |     |     |\n"),
-            Print("+-----+-----+-----+\n"),
-            Print("|     |     |     |\n"),
+            Print("   |     |     |     |\n"),
+            Print("   +-----+-----+-----+\n"),
+            Print("   |     |     |     |\n"),
             Print(format!(
-                "| {} | {} | {} |\n",
+                "   | {} | {} | {} |\n",
                 styled_cells[6], styled_cells[7], styled_cells[8]
             )),
-            Print("|     |     |     |\n"),
-            Print("+-----+-----+-----+\n"),
+            Print("   |     |     |     |\n"),
+            Print("   +-----+-----+-----+\n\n"),
         )
         .unwrap();
     }
@@ -135,7 +137,9 @@ impl TerminalUi {
                         Err(_) => {
                             execute!(
                                 io::stdout(),
-                                Print("Your input must be between 1 and 9! Try again: ")
+                                Print(format!(
+                                    "{PREFIX}Your input must be between 1 and 9! Try again: "
+                                ))
                             )
                             .unwrap();
 
@@ -146,7 +150,9 @@ impl TerminalUi {
                 Err(_) => {
                     execute!(
                         io::stdout(),
-                        Print("Your input must be a number between 1 and 9! Try again: ")
+                        Print(format!(
+                            "{PREFIX}Your input must be a number between 1 and 9! Try again: "
+                        ))
                     )
                     .unwrap();
 
@@ -157,9 +163,9 @@ impl TerminalUi {
     }
 
     fn get_user_input() -> String {
-            let mut buffer = String::new();
-            io::stdin().read_line(&mut buffer).unwrap();
+        let mut buffer = String::new();
+        io::stdin().read_line(&mut buffer).unwrap();
 
-            buffer.trim().to_string()
+        buffer.trim().to_string()
     }
 }
