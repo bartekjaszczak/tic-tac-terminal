@@ -1,12 +1,11 @@
 use super::Ui;
 use crate::board::{Board, Cell, Move};
 use crate::game::{GameResult, WINNING_LINES};
-use crossterm::{
-    cursor, execute,
-    style::{Print, Stylize},
-    terminal,
+use crossterm::style::Stylize;
+use std::{
+    cell::RefCell,
+    io::{self, Write},
 };
-use std::{cell::RefCell, io};
 
 const PREFIX: &str = " > ";
 
@@ -18,25 +17,19 @@ pub struct TerminalUi {
 impl Ui for TerminalUi {
     fn get_move(&self, player_name: &str, additional_message: Option<&str>) -> Move {
         if let Some(msg) = additional_message {
-            execute!(
-                io::stdout(),
-                Print(format!(
-                    "{PREFIX}{}, {}. Try again: ",
-                    player_name.green().bold(),
-                    msg
-                ))
-            )
-            .unwrap();
+            println!(
+                "{PREFIX}{}, {}. Try again: ",
+                player_name.green().bold(),
+                msg
+            );
         } else {
-            execute!(
-                io::stdout(),
-                Print(format!(
-                    "{PREFIX}{}, your move! Enter a number: ",
-                    player_name.green().bold()
-                ))
-            )
-            .unwrap();
+            println!(
+                "{PREFIX}{}, your move! Enter a number: ",
+                player_name.green().bold()
+            );
         }
+
+        io::stdout().flush().unwrap();
 
         Self::get_move_from_user()
     }
@@ -60,7 +53,8 @@ impl Ui for TerminalUi {
 
         self.draw_board();
 
-        execute!(io::stdout(), Print(format!("{PREFIX}{message}"))).unwrap();
+        println!("{PREFIX}{message}");
+        io::stdout().flush().unwrap();
     }
 }
 
@@ -95,34 +89,32 @@ impl TerminalUi {
             })
             .collect();
 
-        execute!(
-            io::stdout(),
-            terminal::Clear(terminal::ClearType::All),
-            cursor::MoveTo(0, 0),
-            Print("\n   +-----+-----+-----+\n"),
-            Print("   |     |     |     |\n"),
-            Print(format!(
-                "   | {} | {} | {} |\n",
-                styled_cells[0], styled_cells[1], styled_cells[2]
-            )),
-            Print("   |     |     |     |\n"),
-            Print("   +-----+-----+-----+\n"),
-            Print("   |     |     |     |\n"),
-            Print(format!(
-                "   | {} | {} | {} |\n",
-                styled_cells[3], styled_cells[4], styled_cells[5]
-            )),
-            Print("   |     |     |     |\n"),
-            Print("   +-----+-----+-----+\n"),
-            Print("   |     |     |     |\n"),
-            Print(format!(
-                "   | {} | {} | {} |\n",
-                styled_cells[6], styled_cells[7], styled_cells[8]
-            )),
-            Print("   |     |     |     |\n"),
-            Print("   +-----+-----+-----+\n\n"),
-        )
-        .unwrap();
+        TerminalUi::clear_screen();
+
+        println!("\n   +-----+-----+-----+");
+        println!("   |     |     |     |");
+        println!(
+            "   | {} | {} | {} |",
+            styled_cells[0], styled_cells[1], styled_cells[2]
+        );
+        println!("   |     |     |     |");
+        println!("   +-----+-----+-----+");
+        println!("   |     |     |     |");
+        println!(
+            "   | {} | {} | {} |",
+            styled_cells[3], styled_cells[4], styled_cells[5]
+        );
+        println!("   |     |     |     |");
+        println!("   +-----+-----+-----+");
+        println!("   |     |     |     |");
+        println!(
+            "   | {} | {} | {} |",
+            styled_cells[6], styled_cells[7], styled_cells[8]
+        );
+        println!("   |     |     |     |");
+        println!("   +-----+-----+-----+\n");
+
+        io::stdout().flush().unwrap();
     }
 
     fn get_move_from_user() -> Move {
@@ -135,26 +127,16 @@ impl TerminalUi {
                     match player_move {
                         Ok(player_move) => player_move,
                         Err(_) => {
-                            execute!(
-                                io::stdout(),
-                                Print(format!(
-                                    "{PREFIX}Your input must be between 1 and 9! Try again: "
-                                ))
-                            )
-                            .unwrap();
+                            println!("{PREFIX}Your input must be between 1 and 9! Try again: ");
+                            io::stdout().flush().unwrap();
 
                             continue;
                         }
                     }
                 }
                 Err(_) => {
-                    execute!(
-                        io::stdout(),
-                        Print(format!(
-                            "{PREFIX}Your input must be a number between 1 and 9! Try again: "
-                        ))
-                    )
-                    .unwrap();
+                    println!("{PREFIX}Your input must be a number between 1 and 9! Try again: ");
+                    io::stdout().flush().unwrap();
 
                     continue;
                 }
@@ -167,5 +149,72 @@ impl TerminalUi {
         io::stdin().read_line(&mut buffer).unwrap();
 
         buffer.trim().to_string()
+    }
+
+    fn clear_screen() {
+        print!("\x1B[2J");
+        print!("\x1B[H");
+        io::stdout().flush().unwrap();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_at_creation() {
+        let tui = TerminalUi::new();
+
+        for cell in *tui.board.borrow() {
+            match cell {
+                Cell::Empty(_) => (),
+                _ => panic!("Cells should be empty at creation"),
+            }
+        }
+
+        assert_eq!(
+            *tui.winning_line.borrow(),
+            None,
+            "There should be no winning line at creation"
+        );
+    }
+
+    #[test]
+    fn update_board() {
+        let tui = TerminalUi::new();
+
+        let mut fake_board: Board = [Cell::Empty(0); 9];
+        fake_board[2] = Cell::O;
+        fake_board[4] = Cell::X;
+        fake_board[7] = Cell::Empty(8);
+
+        tui.update_board(&fake_board);
+
+        assert_eq!(*tui.board.borrow(), fake_board, "Board should be updated");
+    }
+
+    #[test]
+    fn draw() {
+        let tui = TerminalUi::new();
+        let result = GameResult::Draw;
+
+        tui.notify_result(&result);
+
+        assert_eq!(
+            *tui.winning_line.borrow(),
+            None,
+            "There should be no winning line in draw"
+        );
+    }
+
+    #[test]
+    fn player_won() {
+        let tui = TerminalUi::new();
+        let result = GameResult::PlayerWon(String::from("Steve"), 3);
+
+        tui.notify_result(&result);
+
+        assert_eq!(*tui.winning_line.borrow(), Some(WINNING_LINES[3]));
     }
 }

@@ -1,10 +1,11 @@
 use std::fmt;
 
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Move {
     index: usize,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Cell {
     Empty(usize),
     O,
@@ -44,5 +45,36 @@ impl Move {
 
     fn marker(&self) -> usize {
         self.index + 1
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn proper_move() {
+        for index in 1..=9 {
+            let m = Move::try_new(index);
+
+            assert!(m.is_ok(), "Move should be constructed properly");
+
+            let m = m.unwrap();
+
+            assert_eq!(m.index(), index - 1);
+            assert_eq!(m.marker(), index);
+        }
+    }
+
+    #[test]
+    fn incorrect_move() {
+        for index in [0, 10, 11, 100, 55555] {
+            let m = Move::try_new(index);
+
+            assert!(
+                m.is_err(),
+                "Move should fail to construct with move out of 1..=9 range"
+            );
+        }
     }
 }

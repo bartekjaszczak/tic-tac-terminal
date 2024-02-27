@@ -15,29 +15,29 @@ pub const WINNING_LINES: [[usize; 3]; 8] = [
 
 pub type WinningLineIndex = usize;
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum GameResult {
     PlayerWon(String, WinningLineIndex),
     Draw,
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 enum GameState {
     NotStarted,
     Ongoing,
     Finished(GameResult),
 }
 
-pub struct Game<T: Ui> {
+pub struct Game<'a, T: Ui> {
     board: Board,
-    players: [Player; 2],
+    players: [&'a Player; 2],
     current_player: usize,
     game_state: GameState,
-    ui: T,
+    ui: &'a T,
 }
 
-impl<T: Ui> Game<T> {
-    pub fn new(player1: Player, player2: Player, ui_backend: T) -> Game<T> {
+impl<'a, T: Ui> Game<'a, T> {
+    pub fn new(player1: &'a Player, player2: &'a Player, ui_backend: &'a T) -> Game<'a, T> {
         let mut game = Game {
             board: [Cell::Empty(0); 9],
             players: [player1, player2],
@@ -77,7 +77,7 @@ impl<T: Ui> Game<T> {
         let mut error_message = None;
 
         let player_move = loop {
-            let player_move = current_player.get_move(&self.board, &self.ui, error_message);
+            let player_move = current_player.get_move(&self.board, self.ui, error_message);
             if self.is_valid_move(&player_move) {
                 break player_move;
             } else {
@@ -152,5 +152,262 @@ impl<T: Ui> Game<T> {
             }
             _ => (),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cell::RefCell;
+
+    use super::*;
+
+    struct MockUi {
+        expected_moves: RefCell<Vec<Move>>,
+        notify_result_calls: RefCell<u32>,
+    }
+
+    impl Ui for MockUi {
+        fn get_move(&self, _player_name: &str, _additional_message: Option<&str>) -> Move {
+            self.expected_moves.borrow_mut().remove(0) // Make sure there are enough fake moves
+        }
+
+        fn update_board(&self, _board: &Board) {
+            // Don't do anything
+        }
+
+        fn notify_result(&self, _result: &crate::game::GameResult) {
+            *self.notify_result_calls.borrow_mut() += 1;
+        }
+    }
+
+    impl MockUi {
+        fn with_expected_moves(expected_moves: Vec<Move>) -> MockUi {
+            MockUi {
+                expected_moves: RefCell::new(expected_moves),
+                notify_result_calls: RefCell::new(0),
+            }
+        }
+
+        fn new() -> MockUi {
+            MockUi {
+                expected_moves: RefCell::new(vec![]),
+                notify_result_calls: RefCell::new(0),
+            }
+        }
+    }
+
+    /*
+     * Test case ideas
+     * - take_turn: player1 goes, then player2, then player1 again
+     * - start doesn't change state if it's running already
+     */
+
+    #[test]
+    fn announce_result() {
+        let mock_ui = MockUi::new();
+        let p1 = Player::Human(String::from("Steve"));
+        let p2 = Player::Human(String::from("Another Steve"));
+        let mut game = Game::new(&p1, &p2, &mock_ui);
+
+        game.announce_result(); // GameState::NotStarted by default
+        assert_eq!(
+            *mock_ui.notify_result_calls.borrow(),
+            0,
+            "Ui shouldn't be notified if game isn't finished"
+        );
+
+        game.game_state = GameState::Ongoing;
+        game.announce_result();
+        assert_eq!(
+            *mock_ui.notify_result_calls.borrow(),
+            0,
+            "Ui shouldn't be notified if game isn't finished"
+        );
+
+        game.game_state = GameState::Finished(GameResult::Draw);
+        game.announce_result();
+        assert_eq!(
+            *mock_ui.notify_result_calls.borrow(),
+            1,
+            "Ui should be notified when game is finished"
+        );
+    }
+
+    #[test]
+    fn move_validation() {
+        let mock_ui = MockUi::new();
+        let p1 = Player::Human(String::from("Steve"));
+        let p2 = Player::Human(String::from("Another Steve"));
+        let mut game = Game::new(&p1, &p2, &mock_ui);
+
+        let valid_move = Move::try_new(1).unwrap();
+        let invalid_move1 = Move::try_new(4).unwrap();
+        let invalid_move2 = Move::try_new(5).unwrap();
+
+        assert!(
+            game.is_valid_move(&valid_move),
+            "All moves should be valid when game starts"
+        );
+        assert!(
+            game.is_valid_move(&invalid_move1),
+            "All moves should be valid when game starts"
+        );
+        assert!(
+            game.is_valid_move(&invalid_move2),
+            "All moves should be valid when game starts"
+        );
+
+        game.board[3] = Cell::X;
+        game.board[4] = Cell::O;
+
+        assert!(
+            game.is_valid_move(&valid_move),
+            "Move on empty cell should be valid"
+        );
+        assert!(
+            !game.is_valid_move(&invalid_move1),
+            "Move on occupied cell shouldn't be valid"
+        );
+        assert!(
+            !game.is_valid_move(&invalid_move2),
+            "Move on occupied cell shouldn't be valid"
+        );
+    }
+
+    #[test]
+    fn player1_win_check() {
+        let mock_ui = MockUi::new();
+        let p1 = Player::Human(String::from("Steve"));
+        let p2 = Player::Human(String::from("Another Steve"));
+        let mut game = Game::new(&p1, &p2, &mock_ui);
+
+        game.game_state = GameState::Ongoing;
+
+        game.board[2] = Cell::O;
+        game.board[4] = Cell::O;
+
+        game.check_if_over();
+
+        assert_eq!(
+            game.game_state,
+            GameState::Ongoing,
+            "Game state should remain ongoing if there's no winner"
+        );
+
+        game.board[6] = Cell::O; // indices 2-4-6 - secondary diagonal
+
+        game.check_if_over();
+
+        match game.game_state {
+            GameState::Finished(GameResult::PlayerWon(name, _)) => assert_eq!(name, "Steve"),
+            _ => panic!("Player 1 (playing with 'O' won), game state should reflect that"),
+        }
+    }
+
+    #[test]
+    fn player2_win_check() {
+        let mock_ui = MockUi::new();
+        let p1 = Player::Human(String::from("Steve"));
+        let p2 = Player::Human(String::from("Another Steve"));
+        let mut game = Game::new(&p1, &p2, &mock_ui);
+
+        game.game_state = GameState::Ongoing;
+
+        game.board[1] = Cell::X;
+        game.board[4] = Cell::X;
+
+        game.check_if_over();
+
+        assert_eq!(
+            game.game_state,
+            GameState::Ongoing,
+            "Game state should remain ongoing if there's no winner"
+        );
+
+        game.board[7] = Cell::X; // indices 1-4-7 - second column
+
+        game.check_if_over();
+
+        match game.game_state {
+            GameState::Finished(GameResult::PlayerWon(name, _)) => {
+                assert_eq!(name, "Another Steve")
+            }
+            _ => panic!("Player 2 (playing with 'X' won), game state should reflect that"),
+        }
+    }
+
+    #[test]
+    fn draw_check() {
+        let mock_ui = MockUi::new();
+        let p1 = Player::Human(String::from("Steve"));
+        let p2 = Player::Human(String::from("Another Steve"));
+        let mut game = Game::new(&p1, &p2, &mock_ui);
+
+        game.game_state = GameState::Ongoing;
+        game.board = [
+            Cell::O,
+            Cell::X,
+            Cell::O,
+            Cell::X,
+            Cell::X,
+            Cell::O,
+            Cell::O,
+            Cell::O,
+            Cell::X,
+        ]; // draw board
+
+        game.check_if_over();
+
+        assert_eq!(
+            game.game_state,
+            GameState::Finished(GameResult::Draw),
+            "On draw, game state should be Finished with result Draw"
+        );
+    }
+
+    #[test]
+    fn player_make_move() {
+        let mock_ui = MockUi::new();
+        let p1 = Player::Human(String::from("Steve"));
+        let p2 = Player::Human(String::from("Another Steve"));
+        let mut game = Game::new(&p1, &p2, &mock_ui);
+
+        assert_eq!(
+            game.board[0],
+            Cell::Empty(1),
+            "Cell 1 should be empty at the beginning"
+        );
+        assert_eq!(
+            game.board[1],
+            Cell::Empty(2),
+            "Cell 2 should be empty at the beginning"
+        );
+
+        game.current_player_make_move(Move::try_new(1).unwrap());
+
+        assert_eq!(
+            game.board[0],
+            Cell::O,
+            "Cell 1 should contain 'O' after player 1's move"
+        );
+        assert_eq!(
+            game.board[1],
+            Cell::Empty(2),
+            "Cell 2 should be empty after player 1's move"
+        );
+
+        game.current_player = 1; // switch to player 2
+        game.current_player_make_move(Move::try_new(2).unwrap());
+
+        assert_eq!(
+            game.board[0],
+            Cell::O,
+            "Cell 1 should contain 'O' after player 1's move"
+        );
+        assert_eq!(
+            game.board[1],
+            Cell::X,
+            "Cell 2 should contain 'X' after player 2's move"
+        );
     }
 }
