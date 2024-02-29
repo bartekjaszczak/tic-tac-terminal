@@ -164,10 +164,12 @@ mod tests {
     struct MockUi {
         expected_moves: RefCell<Vec<Move>>,
         notify_result_calls: RefCell<u32>,
+        get_move_calls: RefCell<u32>,
     }
 
     impl Ui for MockUi {
         fn get_move(&self, _player_name: &str, _additional_message: Option<&str>) -> Move {
+            *self.get_move_calls.borrow_mut() += 1;
             self.expected_moves.borrow_mut().remove(0) // Make sure there are enough fake moves
         }
 
@@ -185,6 +187,7 @@ mod tests {
             MockUi {
                 expected_moves: RefCell::new(expected_moves),
                 notify_result_calls: RefCell::new(0),
+                get_move_calls: RefCell::new(0),
             }
         }
 
@@ -192,15 +195,10 @@ mod tests {
             MockUi {
                 expected_moves: RefCell::new(vec![]),
                 notify_result_calls: RefCell::new(0),
+                get_move_calls: RefCell::new(0),
             }
         }
     }
-
-    /*
-     * Test case ideas
-     * - take_turn: player1 goes, then player2, then player1 again
-     * - start doesn't change state if it's running already
-     */
 
     #[test]
     fn announce_result() {
@@ -408,6 +406,165 @@ mod tests {
             game.board[1],
             Cell::X,
             "Cell 2 should contain 'X' after player 2's move"
+        );
+    }
+
+    #[test]
+    fn players_take_turn() {
+        let mock_ui = MockUi::with_expected_moves(vec![
+            Move::try_new(1).unwrap(), // Player1 goes top left
+            Move::try_new(2).unwrap(), // Player2 goes top middle
+            Move::try_new(4).unwrap(), // Player1 goes middle left
+        ]);
+        let p1 = Player::Human(String::from("Steve"));
+        let p2 = Player::Human(String::from("Another Steve"));
+        let mut game = Game::new(&p1, &p2, &mock_ui);
+
+        game.game_state = GameState::Ongoing;
+
+        assert_eq!(
+            game.board[0],
+            Cell::Empty(1),
+            "Cell 1 should be empty at the beginning"
+        );
+        assert_eq!(
+            game.board[1],
+            Cell::Empty(2),
+            "Cell 2 should be empty at the beginning"
+        );
+        assert_eq!(
+            game.board[3],
+            Cell::Empty(4),
+            "Cell 4 should be empty at the beginning"
+        );
+
+        game.take_turn();
+
+        assert_eq!(
+            game.board[0],
+            Cell::O,
+            "Cell 1 should contain 'O' after player 1's move"
+        );
+        assert_eq!(
+            game.board[1],
+            Cell::Empty(2),
+            "Cell 2 should be empty after player 1's move"
+        );
+        assert_eq!(
+            game.board[3],
+            Cell::Empty(4),
+            "Cell 4 should be empty after player 1's move"
+        );
+
+        game.current_player = 1;
+        game.take_turn();
+
+        assert_eq!(
+            game.board[0],
+            Cell::O,
+            "Cell 1 shouldn't change state after subsequent moves"
+        );
+        assert_eq!(
+            game.board[1],
+            Cell::X,
+            "Cell 2 should contain 'X' after player 2's move"
+        );
+        assert_eq!(
+            game.board[3],
+            Cell::Empty(4),
+            "Cell 4 should be empty after player 2's move"
+        );
+
+        game.current_player = 0;
+        game.take_turn();
+
+        assert_eq!(
+            game.board[0],
+            Cell::O,
+            "Cell 1 shouldn't change state after subsequent moves"
+        );
+        assert_eq!(
+            game.board[1],
+            Cell::X,
+            "Cell 2 shouldn't change state after subsequent moves"
+        );
+        assert_eq!(
+            game.board[3],
+            Cell::O,
+            "Cell 4 should contain 'O' after player 1's move"
+        );
+    }
+
+    #[test]
+    fn start_works_only_if_game_is_not_started() {
+        let mock_ui = MockUi::new();
+        let p1 = Player::Human(String::from("Steve"));
+        let p2 = Player::Human(String::from("Another Steve"));
+        let mut game = Game::new(&p1, &p2, &mock_ui);
+
+        game.game_state = GameState::Ongoing;
+        game.start();
+
+        game.game_state = GameState::Finished(GameResult::Draw);
+        game.start();
+
+        game.game_state = GameState::Finished(GameResult::PlayerWon(String::from("Steve"), 0));
+        game.start();
+        game.start();
+
+        assert_eq!(
+            *mock_ui.get_move_calls.borrow(),
+            0,
+            "Calls to start should make no effect unless the state was NotStarted"
+        );
+    }
+
+    #[test]
+    fn full_game_player_1_wins() {
+        let mock_ui = MockUi::with_expected_moves(vec![
+            Move::try_new(1).unwrap(),
+            Move::try_new(7).unwrap(),
+            Move::try_new(9).unwrap(),
+            Move::try_new(5).unwrap(),
+            Move::try_new(3).unwrap(),
+            Move::try_new(6).unwrap(),
+            Move::try_new(2).unwrap(), // Player 1 wins
+        ]);
+        let p1 = Player::Human(String::from("Steve"));
+        let p2 = Player::Human(String::from("Another Steve"));
+        let mut game = Game::new(&p1, &p2, &mock_ui);
+
+        game.start();
+
+        if let GameState::Finished(GameResult::PlayerWon(name, _)) = game.game_state {
+            assert_eq!(name, "Steve");
+        } else {
+            panic!("Player 1 is clearly ahead, he should definitely win");
+        }
+    }
+
+    #[test]
+    fn full_game_draw() {
+        let mock_ui = MockUi::with_expected_moves(vec![
+            Move::try_new(9).unwrap(),
+            Move::try_new(5).unwrap(),
+            Move::try_new(7).unwrap(),
+            Move::try_new(8).unwrap(),
+            Move::try_new(2).unwrap(),
+            Move::try_new(1).unwrap(),
+            Move::try_new(6).unwrap(),
+            Move::try_new(3).unwrap(),
+            Move::try_new(4).unwrap(), // Draw
+        ]);
+        let p1 = Player::Human(String::from("Steve"));
+        let p2 = Player::Human(String::from("Another Steve"));
+        let mut game = Game::new(&p1, &p2, &mock_ui);
+
+        game.start();
+
+        assert!(
+            matches!(game.game_state, GameState::Finished(GameResult::Draw)),
+            "Game was a draw, game state should reflect that"
         );
     }
 }
