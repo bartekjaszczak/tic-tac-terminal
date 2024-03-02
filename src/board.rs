@@ -1,3 +1,4 @@
+use crate::game::WinningLineIndex;
 use std::{
     fmt,
     ops::{Index, IndexMut},
@@ -25,6 +26,17 @@ pub struct Board {
 pub struct BoardIterator<'a> {
     inner: std::slice::Iter<'a, Cell>,
 }
+
+pub const WINNING_LINES: [[usize; 3]; 8] = [
+    [0, 3, 6], // 1st column
+    [1, 4, 7], // 2nd column
+    [2, 5, 8], // 3rd column
+    [0, 1, 2], // 1st row
+    [3, 4, 5], // 2nd row
+    [6, 7, 8], // 3rd row
+    [0, 4, 8], // main diagonal
+    [2, 4, 6], // secondary diagonal
+];
 
 impl fmt::Display for Cell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -116,6 +128,22 @@ impl Board {
 
     pub fn is_valid_move(&self, player_move: &Move) -> bool {
         self.get_possible_moves().contains(player_move)
+    }
+
+    pub fn get_winning_line(&self) -> Option<WinningLineIndex> {
+        let b = &self.cells;
+
+        for (index, cell_triplet) in WINNING_LINES.iter().enumerate() {
+            let (c1, c2, c3) = (b[cell_triplet[0]], b[cell_triplet[1]], b[cell_triplet[2]]);
+            if c1 == c2 && c1 == c3 {
+                match c1 {
+                    Cell::O | Cell::X => return Some(index),
+                    _ => continue,
+                }
+            }
+        }
+
+        None
     }
 }
 

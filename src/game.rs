@@ -1,17 +1,6 @@
-use crate::board::{Board, Cell, Move};
+use crate::board::{Board, Cell, Move, WINNING_LINES};
 use crate::player::Player;
 use crate::ui::Ui;
-
-pub const WINNING_LINES: [[usize; 3]; 8] = [
-    [0, 3, 6], // 1st column
-    [1, 4, 7], // 2nd column
-    [2, 5, 8], // 3rd column
-    [0, 1, 2], // 1st row
-    [3, 4, 5], // 2nd row
-    [6, 7, 8], // 3rd row
-    [0, 4, 8], // main diagonal
-    [2, 4, 6], // secondary diagonal
-];
 
 pub type WinningLineIndex = usize;
 
@@ -90,36 +79,22 @@ impl<'a, T: Ui> Game<'a, T> {
     }
 
     fn check_if_over(&mut self) {
-        let b = &self.board;
+        if let Some(winning_line_index) = self.board.get_winning_line() {
+            let winner = match self.board[WINNING_LINES[winning_line_index][0]] {
+                Cell::O => 0,
+                Cell::X => 1,
+                Cell::Empty(_) => panic!("Winning line cannot be empty"),
+            };
 
-        for (index, cell_triplet) in WINNING_LINES.iter().enumerate() {
-            let (c1, c2, c3) = (
-                &b[cell_triplet[0]],
-                &b[cell_triplet[1]],
-                &b[cell_triplet[2]],
-            );
-            if c1 == c2 && c1 == c3 {
-                let winner = match c1 {
-                    &Cell::O => 0,
-                    &Cell::X => 1,
-                    _ => continue, // false alarm - it's row/col/diag of empty cells
-                };
+            let winner_name = if let Player::Human(name) = &self.players[winner] {
+                name.clone()
+            } else {
+                String::from("CPU")
+            };
 
-                let winner_name = if let Player::Human(name) = &self.players[winner] {
-                    name.clone()
-                } else {
-                    String::from("CPU")
-                };
-
-                self.game_state = GameState::Finished(GameResult::PlayerWon(
-                    winner_name,
-                    index as WinningLineIndex,
-                ));
-                return;
-            }
-        }
-
-        if self.board.is_full() {
+            self.game_state =
+                GameState::Finished(GameResult::PlayerWon(winner_name, winning_line_index));
+        } else if self.board.is_full() {
             self.game_state = GameState::Finished(GameResult::Draw);
         }
     }

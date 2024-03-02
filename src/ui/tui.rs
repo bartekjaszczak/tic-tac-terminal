@@ -1,18 +1,18 @@
 use super::Ui;
-use crate::board::{Board, Cell, Move};
-use crate::game::{GameResult, WINNING_LINES};
+use crate::board::{Board, Cell, Move, WINNING_LINES};
+use crate::game::GameResult;
 use crossterm::style::Stylize;
 use std::{
     cell::RefCell,
     io::{self, Write},
 };
 
-const PREFIX: &str = " > ";
-
 pub struct TerminalUi {
     board: RefCell<Board>,
     winning_line: RefCell<Option<[usize; 3]>>,
 }
+
+const PREFIX: &str = " > ";
 
 impl Ui for TerminalUi {
     fn get_move(&self, player_name: &str, additional_message: Option<&str>) -> Move {
