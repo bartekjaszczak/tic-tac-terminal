@@ -1,4 +1,9 @@
-use std::fmt;
+use std::{
+    fmt,
+    ops::{Index, IndexMut},
+};
+
+type Cells = [Cell; 9];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Move {
@@ -12,7 +17,14 @@ pub enum Cell {
     X,
 }
 
-pub type Board = [Cell; 9];
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Board {
+    cells: Cells,
+}
+
+pub struct BoardIterator<'a> {
+    inner: std::slice::Iter<'a, Cell>,
+}
 
 impl fmt::Display for Cell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -27,6 +39,28 @@ impl fmt::Display for Cell {
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.marker())
+    }
+}
+
+impl Index<usize> for Board {
+    type Output = Cell;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.cells[index]
+    }
+}
+
+impl IndexMut<usize> for Board {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.cells[index]
+    }
+}
+
+impl<'a> Iterator for BoardIterator<'a> {
+    type Item = &'a Cell;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next()
     }
 }
 
@@ -45,6 +79,29 @@ impl Move {
 
     fn marker(&self) -> usize {
         self.index + 1
+    }
+}
+
+impl Board {
+    pub fn new() -> Board {
+        let mut cells = [Cell::Empty(0); 9];
+        for i in 0..9 {
+            cells[i] = Cell::Empty(i + 1); // Put numbers 1..=9 into Empty cells. They'll
+                                           // serve as cell positions
+        }
+        Board { cells }
+    }
+
+    pub fn from(cells: Cells) -> Board {
+        Board {
+            cells
+        }
+    }
+
+    pub fn iter(&self) -> BoardIterator {
+        BoardIterator {
+            inner: self.cells.iter(),
+        }
     }
 }
 

@@ -38,20 +38,13 @@ pub struct Game<'a, T: Ui> {
 
 impl<'a, T: Ui> Game<'a, T> {
     pub fn new(player1: &'a Player, player2: &'a Player, ui_backend: &'a T) -> Game<'a, T> {
-        let mut game = Game {
-            board: [Cell::Empty(0); 9],
+        Game {
+            board: Board::new(),
             players: [player1, player2],
             current_player: 0,
             game_state: GameState::NotStarted,
             ui: ui_backend,
-        };
-
-        for i in 0..9 {
-            game.board[i] = Cell::Empty(i + 1); // Put numbers 1..=9 into Empty cells. They'll
-                                                // serve as cell positions
         }
-
-        game
     }
 
     pub fn start(&mut self) {
@@ -342,7 +335,7 @@ mod tests {
         let mut game = Game::new(&p1, &p2, &mock_ui);
 
         game.game_state = GameState::Ongoing;
-        game.board = [
+        game.board = Board::from([
             Cell::O,
             Cell::X,
             Cell::O,
@@ -352,7 +345,7 @@ mod tests {
             Cell::O,
             Cell::O,
             Cell::X,
-        ]; // draw board
+        ]); // draw board
 
         game.check_if_over();
 

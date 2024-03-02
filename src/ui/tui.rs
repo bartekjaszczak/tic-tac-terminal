@@ -61,7 +61,7 @@ impl Ui for TerminalUi {
 impl TerminalUi {
     pub fn new() -> TerminalUi {
         TerminalUi {
-            board: RefCell::new([Cell::Empty(0); 9]),
+            board: RefCell::new(Board::new()),
             winning_line: RefCell::new(None),
         }
     }
@@ -166,7 +166,7 @@ mod tests {
     fn empty_at_creation() {
         let tui = TerminalUi::new();
 
-        for cell in *tui.board.borrow() {
+        for cell in tui.board.borrow().iter() {
             match cell {
                 Cell::Empty(_) => (),
                 _ => panic!("Cells should be empty at creation"),
@@ -184,7 +184,7 @@ mod tests {
     fn update_board() {
         let tui = TerminalUi::new();
 
-        let mut fake_board: Board = [Cell::Empty(0); 9];
+        let mut fake_board: Board = Board::new();
         fake_board[2] = Cell::O;
         fake_board[4] = Cell::X;
         fake_board[7] = Cell::Empty(8);

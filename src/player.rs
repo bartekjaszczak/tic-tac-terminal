@@ -22,7 +22,6 @@ impl Player {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::board::Cell;
 
     struct MockUi {
         returned_move: Move,
@@ -48,7 +47,7 @@ mod tests {
         let mock_ui = MockUi {
             returned_move: returned_move.clone()
         };
-        let fake_board = [Cell::Empty(0); 9];
+        let fake_board = Board::new();
         let player = Player::Human(String::from("Steve"));
 
         let m = player.get_move(&fake_board, &mock_ui, None);
@@ -62,7 +61,7 @@ mod tests {
         // TODO: Update the test case once the functionality is in place
         let returned_move = Move::try_new(3).unwrap();
         let mock_ui = MockUi { returned_move };
-        let fake_board = [Cell::Empty(0); 9];
+        let fake_board = Board::new();
 
         let cpu = Player::CPU;
 
