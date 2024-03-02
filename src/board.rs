@@ -76,6 +76,16 @@ impl<'a> Iterator for BoardIterator<'a> {
     }
 }
 
+impl Cell {
+    pub fn opposite(&self) -> Cell {
+        match *self {
+            Cell::O => Cell::X,
+            Cell::X => Cell::O,
+            Cell::Empty(n) => Cell::Empty(n)
+        }
+    }
+}
+
 impl BoardMove {
     pub fn try_new(num: usize) -> Result<BoardMove, ()> {
         if num < 1 || num > 9 {
