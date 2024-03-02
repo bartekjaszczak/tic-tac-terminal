@@ -60,7 +60,7 @@ impl<'a, T: Ui> Game<'a, T> {
 
         let player_move = loop {
             let player_move = current_player.get_move(&self.board, self.ui, error_message);
-            if self.is_valid_move(&player_move) {
+            if self.board.is_valid_move(&player_move) {
                 break player_move;
             } else {
                 error_message = Some("this cell is not empty");
@@ -72,10 +72,6 @@ impl<'a, T: Ui> Game<'a, T> {
 
     fn current_player_make_move(&mut self, player_move: Move) {
         self.board[player_move.index()] = self.current_player_marker();
-    }
-
-    fn is_valid_move(&self, player_move: &Move) -> bool {
-        self.board.get_possible_moves().contains(player_move)
     }
 
     fn check_if_over(&mut self) {

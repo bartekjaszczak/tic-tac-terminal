@@ -213,4 +213,147 @@ mod tests {
             "Move on occupied cell shouldn't be valid"
         );
     }
+
+    #[test]
+    fn full_board_check() {
+        let board = Board::new();
+
+        assert!(
+            !board.is_full(),
+            "Board is empty - method should return false"
+        );
+
+        let mut board = Board::from([Cell::O; 9]);
+
+        assert!(board.is_full(), "Board is full - method should return true");
+
+        board[4] = Cell::Empty('5');
+
+        assert!(
+            !board.is_full(),
+            "Board is almost full - method should return false"
+        );
+    }
+
+    #[test]
+    fn possible_moves() {
+        let board = Board::new();
+        let possible_moves = board.get_possible_moves();
+
+        assert_eq!(
+            possible_moves.len(),
+            9,
+            "There should be 9 possible moves on empty board"
+        );
+
+        let mut board = Board::from([Cell::O; 9]);
+        let possible_moves = board.get_possible_moves();
+
+        assert_eq!(
+            possible_moves.len(),
+            0,
+            "There should be no possible moves on full board"
+        );
+
+        board[4] = Cell::Empty('5');
+        let possible_moves = board.get_possible_moves();
+
+        assert_eq!(
+            possible_moves.len(),
+            1,
+            "There should be only one move possible"
+        );
+        assert_eq!(
+            possible_moves,
+            vec![Move::try_new(5).unwrap()],
+            "Only move '5' should be available"
+        )
+    }
+
+    #[test]
+    fn valid_move() {
+        let mut board = Board::new();
+
+        let move1 = Move::try_new(3).unwrap();
+        let move2 = Move::try_new(4).unwrap();
+        let move3 = Move::try_new(5).unwrap();
+
+        assert!(
+            board.is_valid_move(&move1),
+            "Move on empty cell should be possible"
+        );
+        assert!(
+            board.is_valid_move(&move2),
+            "Move on empty cell should be possible"
+        );
+        assert!(
+            board.is_valid_move(&move3),
+            "Move on empty cell should be possible"
+        );
+
+        board[2] = Cell::O;
+
+        assert!(
+            !board.is_valid_move(&move1),
+            "Move on occupied cell shouldn't be possible"
+        );
+        assert!(
+            board.is_valid_move(&move2),
+            "Move on empty cell should be possible"
+        );
+        assert!(
+            board.is_valid_move(&move3),
+            "Move on empty cell should be possible"
+        );
+
+        let board = Board::from([Cell::O; 9]);
+
+        assert!(
+            !board.is_valid_move(&move1),
+            "Move on occupied cell shouldn't be possible"
+        );
+        assert!(
+            !board.is_valid_move(&move2),
+            "Move on occupied cell shouldn't be possible"
+        );
+        assert!(
+            !board.is_valid_move(&move3),
+            "Move on occupied cell shouldn't be possible"
+        );
+    }
+
+    #[test]
+    fn winning_lines() {
+        let board = Board::new();
+
+        assert_eq!(
+            board.get_winning_line(),
+            None,
+            "There should be no winning line in empty board"
+        );
+
+        let mut board = Board::from([
+            Cell::O,
+            Cell::X,
+            Cell::Empty('3'),
+            Cell::O,
+            Cell::X,
+            Cell::Empty('6'),
+            Cell::Empty('7'),
+            Cell::Empty('8'),
+            Cell::Empty('9'),
+        ]); // Almost-winning board
+
+        assert_eq!(
+            board.get_winning_line(),
+            None,
+            "There should be no winning line"
+        );
+
+        board[6] = Cell::O;
+
+        if let None = board.get_winning_line() {
+            panic!("There should be winnig line - three 'O's in column 1");
+        }
+    }
 }
