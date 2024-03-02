@@ -1,4 +1,4 @@
-use crate::board::{Board, Move};
+use crate::board::{Board, BoardMove};
 use crate::ui::Ui;
 
 pub enum Player {
@@ -7,14 +7,14 @@ pub enum Player {
 }
 
 impl Player {
-    pub fn get_move(&self, board: &Board, ui: &impl Ui, additional_message: Option<&str>) -> Move {
+    pub fn get_move(&self, board: &Board, ui: &impl Ui, additional_message: Option<&str>) -> BoardMove {
         match self {
             Self::Human(name) => ui.get_move(name, additional_message),
             Self::CPU => Self::calculate_best_move(board),
         }
     }
 
-    fn calculate_best_move(_board: &Board) -> Move {
+    fn calculate_best_move(_board: &Board) -> BoardMove {
         todo!()
     }
 }
@@ -24,11 +24,11 @@ mod tests {
     use super::*;
 
     struct MockUi {
-        returned_move: Move,
+        returned_move: BoardMove,
     }
 
     impl Ui for MockUi {
-        fn get_move(&self, _player_name: &str, _additional_message: Option<&str>) -> Move {
+        fn get_move(&self, _player_name: &str, _additional_message: Option<&str>) -> BoardMove {
             self.returned_move.clone()
         }
 
@@ -43,7 +43,7 @@ mod tests {
 
     #[test]
     fn get_human_move() {
-        let returned_move = Move::try_new(3).unwrap();
+        let returned_move = BoardMove::try_new(3).unwrap();
         let mock_ui = MockUi {
             returned_move: returned_move.clone()
         };
@@ -59,7 +59,7 @@ mod tests {
     #[should_panic(expected = "not yet implemented")]
     fn get_cpu_move() {
         // TODO: Update the test case once the functionality is in place
-        let returned_move = Move::try_new(3).unwrap();
+        let returned_move = BoardMove::try_new(3).unwrap();
         let mock_ui = MockUi { returned_move };
         let fake_board = Board::new();
 

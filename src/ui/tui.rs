@@ -1,5 +1,5 @@
 use super::Ui;
-use crate::board::{Board, Cell, Move, WINNING_LINES};
+use crate::board::{Board, Cell, BoardMove, WINNING_LINES};
 use crate::game::GameResult;
 use crossterm::style::Stylize;
 use std::{
@@ -15,7 +15,7 @@ pub struct TerminalUi {
 const PREFIX: &str = " > ";
 
 impl Ui for TerminalUi {
-    fn get_move(&self, player_name: &str, additional_message: Option<&str>) -> Move {
+    fn get_move(&self, player_name: &str, additional_message: Option<&str>) -> BoardMove {
         if let Some(msg) = additional_message {
             println!(
                 "{PREFIX}{}, {}. Try again: ",
@@ -117,15 +117,15 @@ impl TerminalUi {
         io::stdout().flush().unwrap();
     }
 
-    fn get_move_from_user() -> Move {
+    fn get_move_from_user() -> BoardMove {
         loop {
             let user_input = Self::get_user_input();
 
             break match user_input.parse() {
                 Ok(number) => {
-                    let player_move = Move::try_new(number);
-                    match player_move {
-                        Ok(player_move) => player_move,
+                    let board_move = BoardMove::try_new(number);
+                    match board_move {
+                        Ok(board_move) => board_move,
                         Err(_) => {
                             println!("{PREFIX}Your input must be between 1 and 9! Try again: ");
                             io::stdout().flush().unwrap();

@@ -7,7 +7,7 @@ use std::{
 type Cells = [Cell; 9];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Move {
+pub struct BoardMove {
     index: usize,
 }
 
@@ -48,7 +48,7 @@ impl fmt::Display for Cell {
     }
 }
 
-impl fmt::Display for Move {
+impl fmt::Display for BoardMove {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.index() - 1)
     }
@@ -76,13 +76,13 @@ impl<'a> Iterator for BoardIterator<'a> {
     }
 }
 
-impl Move {
-    pub fn try_new(num: usize) -> Result<Move, ()> {
+impl BoardMove {
+    pub fn try_new(num: usize) -> Result<BoardMove, ()> {
         if num < 1 || num > 9 {
             return Err(());
         }
 
-        Ok(Move { index: num - 1 })
+        Ok(BoardMove { index: num - 1 })
     }
 
     pub fn index(&self) -> usize {
@@ -114,20 +114,20 @@ impl Board {
         !self.iter().any(|&cell| matches!(cell, Cell::Empty(_)))
     }
 
-    pub fn get_possible_moves(&self) -> Vec<Move> {
+    pub fn get_possible_moves(&self) -> Vec<BoardMove> {
         let mut moves = Vec::new();
 
         for (index, cell) in self.iter().enumerate() {
             if let &Cell::Empty(_) = cell {
-                moves.push(Move::try_new(index + 1).unwrap())
+                moves.push(BoardMove::try_new(index + 1).unwrap())
             }
         }
 
         moves
     }
 
-    pub fn is_valid_move(&self, player_move: &Move) -> bool {
-        self.get_possible_moves().contains(player_move)
+    pub fn is_valid_move(&self, board_move: &BoardMove) -> bool {
+        self.get_possible_moves().contains(board_move)
     }
 
     pub fn get_winning_line(&self) -> Option<WinningLineIndex> {
@@ -154,7 +154,7 @@ mod tests {
     #[test]
     fn proper_move() {
         for cell in 1..=9 {
-            let m = Move::try_new(cell);
+            let m = BoardMove::try_new(cell);
 
             assert!(m.is_ok(), "Move should be constructed properly");
 
@@ -167,7 +167,7 @@ mod tests {
     #[test]
     fn incorrect_move() {
         for index in [0, 10, 11, 100, 55555] {
-            let m = Move::try_new(index);
+            let m = BoardMove::try_new(index);
 
             assert!(
                 m.is_err(),
@@ -180,9 +180,9 @@ mod tests {
     fn move_validation() {
         let mut board = Board::new();
 
-        let valid_move = Move::try_new(1).unwrap();
-        let invalid_move1 = Move::try_new(4).unwrap();
-        let invalid_move2 = Move::try_new(5).unwrap();
+        let valid_move = BoardMove::try_new(1).unwrap();
+        let invalid_move1 = BoardMove::try_new(4).unwrap();
+        let invalid_move2 = BoardMove::try_new(5).unwrap();
 
         assert!(
             board.is_valid_move(&valid_move),
@@ -265,7 +265,7 @@ mod tests {
         );
         assert_eq!(
             possible_moves,
-            vec![Move::try_new(5).unwrap()],
+            vec![BoardMove::try_new(5).unwrap()],
             "Only move '5' should be available"
         )
     }
@@ -274,9 +274,9 @@ mod tests {
     fn valid_move() {
         let mut board = Board::new();
 
-        let move1 = Move::try_new(3).unwrap();
-        let move2 = Move::try_new(4).unwrap();
-        let move3 = Move::try_new(5).unwrap();
+        let move1 = BoardMove::try_new(3).unwrap();
+        let move2 = BoardMove::try_new(4).unwrap();
+        let move3 = BoardMove::try_new(5).unwrap();
 
         assert!(
             board.is_valid_move(&move1),

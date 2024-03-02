@@ -1,4 +1,4 @@
-use crate::board::{Board, Cell, Move, WINNING_LINES};
+use crate::board::{Board, Cell, BoardMove, WINNING_LINES};
 use crate::player::Player;
 use crate::ui::Ui;
 
@@ -58,20 +58,20 @@ impl<'a, T: Ui> Game<'a, T> {
 
         let mut error_message = None;
 
-        let player_move = loop {
-            let player_move = current_player.get_move(&self.board, self.ui, error_message);
-            if self.board.is_valid_move(&player_move) {
-                break player_move;
+        let board_move = loop {
+            let board_move = current_player.get_move(&self.board, self.ui, error_message);
+            if self.board.is_valid_move(&board_move) {
+                break board_move;
             } else {
                 error_message = Some("this cell is not empty");
             }
         };
 
-        self.current_player_make_move(player_move);
+        self.current_player_make_move(board_move);
     }
 
-    fn current_player_make_move(&mut self, player_move: Move) {
-        self.board[player_move.index()] = self.current_player_marker();
+    fn current_player_make_move(&mut self, board_move: BoardMove) {
+        self.board[board_move.index()] = self.current_player_marker();
     }
 
     fn check_if_over(&mut self) {
@@ -122,13 +122,13 @@ mod tests {
     use super::*;
 
     struct MockUi {
-        expected_moves: RefCell<Vec<Move>>,
+        expected_moves: RefCell<Vec<BoardMove>>,
         notify_result_calls: RefCell<u32>,
         get_move_calls: RefCell<u32>,
     }
 
     impl Ui for MockUi {
-        fn get_move(&self, _player_name: &str, _additional_message: Option<&str>) -> Move {
+        fn get_move(&self, _player_name: &str, _additional_message: Option<&str>) -> BoardMove {
             *self.get_move_calls.borrow_mut() += 1;
             self.expected_moves.borrow_mut().remove(0) // Make sure there are enough fake moves
         }
@@ -143,7 +143,7 @@ mod tests {
     }
 
     impl MockUi {
-        fn with_expected_moves(expected_moves: Vec<Move>) -> MockUi {
+        fn with_expected_moves(expected_moves: Vec<BoardMove>) -> MockUi {
             MockUi {
                 expected_moves: RefCell::new(expected_moves),
                 notify_result_calls: RefCell::new(0),
@@ -300,7 +300,7 @@ mod tests {
             "Cell 2 should be empty at the beginning"
         );
 
-        game.current_player_make_move(Move::try_new(1).unwrap());
+        game.current_player_make_move(BoardMove::try_new(1).unwrap());
 
         assert_eq!(
             game.board[0],
@@ -314,7 +314,7 @@ mod tests {
         );
 
         game.current_player = 1; // switch to player 2
-        game.current_player_make_move(Move::try_new(2).unwrap());
+        game.current_player_make_move(BoardMove::try_new(2).unwrap());
 
         assert_eq!(
             game.board[0],
@@ -331,9 +331,9 @@ mod tests {
     #[test]
     fn players_take_turn() {
         let mock_ui = MockUi::with_expected_moves(vec![
-            Move::try_new(1).unwrap(), // Player1 goes top left
-            Move::try_new(2).unwrap(), // Player2 goes top middle
-            Move::try_new(4).unwrap(), // Player1 goes middle left
+            BoardMove::try_new(1).unwrap(), // Player1 goes top left
+            BoardMove::try_new(2).unwrap(), // Player2 goes top middle
+            BoardMove::try_new(4).unwrap(), // Player1 goes middle left
         ]);
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
@@ -441,13 +441,13 @@ mod tests {
     #[test]
     fn full_game_player_1_wins() {
         let mock_ui = MockUi::with_expected_moves(vec![
-            Move::try_new(1).unwrap(),
-            Move::try_new(7).unwrap(),
-            Move::try_new(9).unwrap(),
-            Move::try_new(5).unwrap(),
-            Move::try_new(3).unwrap(),
-            Move::try_new(6).unwrap(),
-            Move::try_new(2).unwrap(), // Player 1 wins
+            BoardMove::try_new(1).unwrap(),
+            BoardMove::try_new(7).unwrap(),
+            BoardMove::try_new(9).unwrap(),
+            BoardMove::try_new(5).unwrap(),
+            BoardMove::try_new(3).unwrap(),
+            BoardMove::try_new(6).unwrap(),
+            BoardMove::try_new(2).unwrap(), // Player 1 wins
         ]);
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
@@ -465,15 +465,15 @@ mod tests {
     #[test]
     fn full_game_draw() {
         let mock_ui = MockUi::with_expected_moves(vec![
-            Move::try_new(9).unwrap(),
-            Move::try_new(5).unwrap(),
-            Move::try_new(7).unwrap(),
-            Move::try_new(8).unwrap(),
-            Move::try_new(2).unwrap(),
-            Move::try_new(1).unwrap(),
-            Move::try_new(6).unwrap(),
-            Move::try_new(3).unwrap(),
-            Move::try_new(4).unwrap(), // Draw
+            BoardMove::try_new(9).unwrap(),
+            BoardMove::try_new(5).unwrap(),
+            BoardMove::try_new(7).unwrap(),
+            BoardMove::try_new(8).unwrap(),
+            BoardMove::try_new(2).unwrap(),
+            BoardMove::try_new(1).unwrap(),
+            BoardMove::try_new(6).unwrap(),
+            BoardMove::try_new(3).unwrap(),
+            BoardMove::try_new(4).unwrap(), // Draw
         ]);
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
