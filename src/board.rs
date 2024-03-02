@@ -113,6 +113,10 @@ impl Board {
 
         moves
     }
+
+    pub fn is_valid_move(&self, player_move: &Move) -> bool {
+        self.get_possible_moves().contains(player_move)
+    }
 }
 
 #[cfg(test)]
@@ -142,5 +146,43 @@ mod tests {
                 "Move should fail to construct with move out of 1..=9 range"
             );
         }
+    }
+
+    #[test]
+    fn move_validation() {
+        let mut board = Board::new();
+
+        let valid_move = Move::try_new(1).unwrap();
+        let invalid_move1 = Move::try_new(4).unwrap();
+        let invalid_move2 = Move::try_new(5).unwrap();
+
+        assert!(
+            board.is_valid_move(&valid_move),
+            "All moves should be valid when game starts"
+        );
+        assert!(
+            board.is_valid_move(&invalid_move1),
+            "All moves should be valid when game starts"
+        );
+        assert!(
+            board.is_valid_move(&invalid_move2),
+            "All moves should be valid when game starts"
+        );
+
+        board[3] = Cell::X;
+        board[4] = Cell::O;
+
+        assert!(
+            board.is_valid_move(&valid_move),
+            "Move on empty cell should be valid"
+        );
+        assert!(
+            !board.is_valid_move(&invalid_move1),
+            "Move on occupied cell shouldn't be valid"
+        );
+        assert!(
+            !board.is_valid_move(&invalid_move2),
+            "Move on occupied cell shouldn't be valid"
+        );
     }
 }

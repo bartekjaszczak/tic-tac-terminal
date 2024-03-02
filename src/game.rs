@@ -82,11 +82,7 @@ impl<'a, T: Ui> Game<'a, T> {
     }
 
     fn current_player_make_move(&mut self, player_move: Move) {
-        self.board[player_move.index()] = if self.current_player == 0 {
-            Cell::O
-        } else {
-            Cell::X
-        };
+        self.board[player_move.index()] = self.current_player_marker();
     }
 
     fn is_valid_move(&self, player_move: &Move) -> bool {
@@ -136,6 +132,14 @@ impl<'a, T: Ui> Game<'a, T> {
                 self.ui.notify_result(&result);
             }
             _ => (),
+        }
+    }
+
+    fn current_player_marker(&self) -> Cell {
+        if self.current_player == 0 {
+            Cell::O
+        } else {
+            Cell::X
         }
     }
 }
@@ -213,47 +217,6 @@ mod tests {
             *mock_ui.notify_result_calls.borrow(),
             1,
             "Ui should be notified when game is finished"
-        );
-    }
-
-    #[test]
-    fn move_validation() {
-        let mock_ui = MockUi::new();
-        let p1 = Player::Human(String::from("Steve"));
-        let p2 = Player::Human(String::from("Another Steve"));
-        let mut game = Game::new(&p1, &p2, &mock_ui);
-
-        let valid_move = Move::try_new(1).unwrap();
-        let invalid_move1 = Move::try_new(4).unwrap();
-        let invalid_move2 = Move::try_new(5).unwrap();
-
-        assert!(
-            game.is_valid_move(&valid_move),
-            "All moves should be valid when game starts"
-        );
-        assert!(
-            game.is_valid_move(&invalid_move1),
-            "All moves should be valid when game starts"
-        );
-        assert!(
-            game.is_valid_move(&invalid_move2),
-            "All moves should be valid when game starts"
-        );
-
-        game.board[3] = Cell::X;
-        game.board[4] = Cell::O;
-
-        assert!(
-            game.is_valid_move(&valid_move),
-            "Move on empty cell should be valid"
-        );
-        assert!(
-            !game.is_valid_move(&invalid_move1),
-            "Move on occupied cell shouldn't be valid"
-        );
-        assert!(
-            !game.is_valid_move(&invalid_move2),
-            "Move on occupied cell shouldn't be valid"
         );
     }
 
