@@ -90,10 +90,7 @@ impl<'a, T: Ui> Game<'a, T> {
     }
 
     fn is_valid_move(&self, player_move: &Move) -> bool {
-        match self.board[player_move.index()] {
-            Cell::Empty(_) => true,
-            _ => false,
-        }
+        self.board.get_possible_moves().contains(player_move)
     }
 
     fn check_if_over(&mut self) {
@@ -126,12 +123,7 @@ impl<'a, T: Ui> Game<'a, T> {
             }
         }
 
-        let board_is_full = !self
-            .board
-            .iter()
-            .any(|&cell| matches!(cell, Cell::Empty(_)));
-
-        if board_is_full {
+        if self.board.is_full() {
             self.game_state = GameState::Finished(GameResult::Draw);
         }
     }
@@ -365,12 +357,12 @@ mod tests {
 
         assert_eq!(
             game.board[0],
-            Cell::Empty(1),
+            Cell::Empty('1'),
             "Cell 1 should be empty at the beginning"
         );
         assert_eq!(
             game.board[1],
-            Cell::Empty(2),
+            Cell::Empty('2'),
             "Cell 2 should be empty at the beginning"
         );
 
@@ -383,7 +375,7 @@ mod tests {
         );
         assert_eq!(
             game.board[1],
-            Cell::Empty(2),
+            Cell::Empty('2'),
             "Cell 2 should be empty after player 1's move"
         );
 
@@ -417,17 +409,17 @@ mod tests {
 
         assert_eq!(
             game.board[0],
-            Cell::Empty(1),
+            Cell::Empty('1'),
             "Cell 1 should be empty at the beginning"
         );
         assert_eq!(
             game.board[1],
-            Cell::Empty(2),
+            Cell::Empty('2'),
             "Cell 2 should be empty at the beginning"
         );
         assert_eq!(
             game.board[3],
-            Cell::Empty(4),
+            Cell::Empty('4'),
             "Cell 4 should be empty at the beginning"
         );
 
@@ -440,12 +432,12 @@ mod tests {
         );
         assert_eq!(
             game.board[1],
-            Cell::Empty(2),
+            Cell::Empty('2'),
             "Cell 2 should be empty after player 1's move"
         );
         assert_eq!(
             game.board[3],
-            Cell::Empty(4),
+            Cell::Empty('4'),
             "Cell 4 should be empty after player 1's move"
         );
 
@@ -464,7 +456,7 @@ mod tests {
         );
         assert_eq!(
             game.board[3],
-            Cell::Empty(4),
+            Cell::Empty('4'),
             "Cell 4 should be empty after player 2's move"
         );
 

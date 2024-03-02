@@ -12,7 +12,7 @@ pub struct Move {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Cell {
-    Empty(usize),
+    Empty(char),
     O,
     X,
 }
@@ -38,7 +38,7 @@ impl fmt::Display for Cell {
 
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.marker())
+        write!(f, "{}", self.index() - 1)
     }
 }
 
@@ -76,32 +76,42 @@ impl Move {
     pub fn index(&self) -> usize {
         self.index
     }
-
-    fn marker(&self) -> usize {
-        self.index + 1
-    }
 }
 
 impl Board {
     pub fn new() -> Board {
-        let mut cells = [Cell::Empty(0); 9];
+        let mut cells = [Cell::Empty('0'); 9];
         for i in 0..9 {
-            cells[i] = Cell::Empty(i + 1); // Put numbers 1..=9 into Empty cells. They'll
-                                           // serve as cell positions
+            let ascii_num = ((i + 1) as u8 + b'0') as char;
+            cells[i] = Cell::Empty(ascii_num); // These values serve as cell position
         }
         Board { cells }
     }
 
     pub fn from(cells: Cells) -> Board {
-        Board {
-            cells
-        }
+        Board { cells }
     }
 
     pub fn iter(&self) -> BoardIterator {
         BoardIterator {
             inner: self.cells.iter(),
         }
+    }
+
+    pub fn is_full(&self) -> bool {
+        !self.iter().any(|&cell| matches!(cell, Cell::Empty(_)))
+    }
+
+    pub fn get_possible_moves(&self) -> Vec<Move> {
+        let mut moves = Vec::new();
+
+        for (index, cell) in self.iter().enumerate() {
+            if let &Cell::Empty(_) = cell {
+                moves.push(Move::try_new(index + 1).unwrap())
+            }
+        }
+
+        moves
     }
 }
 
@@ -111,15 +121,14 @@ mod tests {
 
     #[test]
     fn proper_move() {
-        for index in 1..=9 {
-            let m = Move::try_new(index);
+        for cell in 1..=9 {
+            let m = Move::try_new(cell);
 
             assert!(m.is_ok(), "Move should be constructed properly");
 
             let m = m.unwrap();
 
-            assert_eq!(m.index(), index - 1);
-            assert_eq!(m.marker(), index);
+            assert_eq!(m.index(), cell - 1);
         }
     }
 

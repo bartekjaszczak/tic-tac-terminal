@@ -187,7 +187,7 @@ mod tests {
         let mut fake_board: Board = Board::new();
         fake_board[2] = Cell::O;
         fake_board[4] = Cell::X;
-        fake_board[7] = Cell::Empty(8);
+        fake_board[7] = Cell::Empty('8');
 
         tui.update_board(&fake_board);
 
