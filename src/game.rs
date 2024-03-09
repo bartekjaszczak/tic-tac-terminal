@@ -4,13 +4,13 @@ use crate::ui::Ui;
 
 pub type WinningLineIndex = usize;
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum GameResult {
-    PlayerWon(String, WinningLineIndex),
+    PlayerWon(usize, String, WinningLineIndex),
     Draw,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 enum GameState {
     NotStarted,
     Ongoing,
@@ -36,7 +36,7 @@ impl<'a, T: Ui> Game<'a, T> {
         }
     }
 
-    pub fn start(&mut self) {
+    pub fn start(&mut self) -> Result<GameResult, ()> {
         if self.game_state == GameState::NotStarted {
             self.game_state = GameState::Ongoing;
 
@@ -48,6 +48,12 @@ impl<'a, T: Ui> Game<'a, T> {
             }
 
             self.announce_result();
+        }
+
+        if let GameState::Finished(result) = &self.game_state {
+            Ok(result.clone())
+        } else {
+            Err(())
         }
     }
 
@@ -71,7 +77,7 @@ impl<'a, T: Ui> Game<'a, T> {
     }
 
     fn current_player_make_move(&mut self, board_move: BoardMove) {
-        self.board[board_move.index()] = self.current_player_symbol();
+        self.board[board_move.index()] = self.board.current_player_symbol();
     }
 
     fn check_if_over(&mut self) {
@@ -88,8 +94,11 @@ impl<'a, T: Ui> Game<'a, T> {
                 String::from("CPU")
             };
 
-            self.game_state =
-                GameState::Finished(GameResult::PlayerWon(winner_name, winning_line_index));
+            self.game_state = GameState::Finished(GameResult::PlayerWon(
+                winner,
+                winner_name,
+                winning_line_index,
+            ));
         } else if self.board.is_full() {
             self.game_state = GameState::Finished(GameResult::Draw);
         }
@@ -103,14 +112,6 @@ impl<'a, T: Ui> Game<'a, T> {
                 self.ui.notify_result(&result);
             }
             _ => (),
-        }
-    }
-
-    fn current_player_symbol(&self) -> Cell {
-        if self.current_player == 0 {
-            Cell::O
-        } else {
-            Cell::X
         }
     }
 }
@@ -229,7 +230,9 @@ mod tests {
         game.check_if_over();
 
         match game.game_state {
-            GameState::Finished(GameResult::PlayerWon(name, _)) => assert_eq!(name, "Steve"),
+            GameState::Finished(GameResult::PlayerWon(_id, name, _winning_line)) => {
+                assert_eq!(name, "Steve")
+            }
             _ => panic!("Player 1 (playing with 'O' won), game state should reflect that"),
         }
     }
@@ -259,7 +262,7 @@ mod tests {
         game.check_if_over();
 
         match game.game_state {
-            GameState::Finished(GameResult::PlayerWon(name, _)) => {
+            GameState::Finished(GameResult::PlayerWon(_id, name, _winning_line)) => {
                 assert_eq!(name, "Another Steve")
             }
             _ => panic!("Player 2 (playing with 'X' won), game state should reflect that"),
@@ -430,24 +433,53 @@ mod tests {
     #[test]
     fn start_works_only_if_game_is_not_started() {
         let mock_ui = MockUi::new();
-        let p1 = Player::Human(String::from("Steve"));
-        let p2 = Player::Human(String::from("Another Steve"));
+        let p1 = Player::CPU;
+        let p2 = Player::CPU;
         let mut game = Game::new(&p1, &p2, &mock_ui);
 
         game.game_state = GameState::Ongoing;
-        game.start();
+        let result = game.start();
+        assert!(matches!(result, Err(())), "There should be no result");
 
         game.game_state = GameState::Finished(GameResult::Draw);
-        game.start();
+        let result = game.start();
+        assert!(matches!(result, Ok(_)), "There should be a result");
 
-        game.game_state = GameState::Finished(GameResult::PlayerWon(String::from("Steve"), 0));
-        game.start();
-        game.start();
+        game.game_state = GameState::Finished(GameResult::PlayerWon(0, String::from("CPU"), 0));
+        let result = game.start();
+        assert!(matches!(result, Ok(_)), "There should be a result");
+        let result = game.start();
+        assert!(matches!(result, Ok(_)), "There should be a result");
 
         assert_eq!(
             *mock_ui.get_move_calls.borrow(),
             0,
-            "Calls to start should make no effect unless the state was NotStarted"
+            "There should be no effect if start() was called in NotStarted state"
+        );
+
+        assert_eq!(
+            *mock_ui.notify_result_calls.borrow(),
+            0,
+            "UI should only be notified if start() was called in NotStarted state"
+        );
+
+        game.game_state = GameState::NotStarted;
+        let result = game.start();
+        assert!(matches!(result, Ok(_)), "There should be a result");
+
+        assert_eq!(
+            *mock_ui.notify_result_calls.borrow(),
+            1,
+            "UI should only be notified if start() was called in NotStarted state"
+        );
+
+        let result = game.start();
+        assert!(matches!(result, Ok(_)), "There should still be a result");
+
+        assert_eq!(
+            *mock_ui.notify_result_calls.borrow(),
+            1,
+            "UI should be notified only once"
         );
     }
 
@@ -464,15 +496,20 @@ mod tests {
         ]);
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
-        let mut game = Game::new(&p1, &p2, &mock_ui);
 
-        game.start();
+        let result = Game::new(&p1, &p2, &mock_ui).start();
 
-        if let GameState::Finished(GameResult::PlayerWon(name, _)) = game.game_state {
+        if let Ok(GameResult::PlayerWon(_id, name, _winning_line)) = result {
             assert_eq!(name, "Steve");
         } else {
             panic!("Player 1 is clearly ahead, he should definitely win");
         }
+
+        assert_eq!(
+            *mock_ui.notify_result_calls.borrow(),
+            1,
+            "Game should notify player about the result via UI"
+        );
     }
 
     #[test]
@@ -490,13 +527,33 @@ mod tests {
         ]);
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
-        let mut game = Game::new(&p1, &p2, &mock_ui);
 
-        game.start();
+        let result = Game::new(&p1, &p2, &mock_ui).start();
 
         assert!(
-            matches!(game.game_state, GameState::Finished(GameResult::Draw)),
-            "Game was a draw, game state should reflect that"
+            matches!(result, Ok(GameResult::Draw)),
+            "CPU should always draw CPU"
         );
+
+        assert_eq!(
+            *mock_ui.notify_result_calls.borrow(),
+            1,
+            "Game should notify player about the result via UI"
+        );
+    }
+
+    #[test]
+    fn cpu_vs_cpu_always_draws() {
+        let mock_ui = MockUi::new();
+        let p1 = Player::CPU;
+        let p2 = Player::CPU;
+
+        for _ in 0..10 {
+            let result = Game::new(&p1, &p2, &mock_ui).start();
+            assert!(
+                matches!(result, Ok(GameResult::Draw)),
+                "CPU should always draw CPU"
+            );
+        }
     }
 }

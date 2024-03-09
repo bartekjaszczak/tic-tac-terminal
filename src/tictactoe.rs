@@ -1,4 +1,4 @@
-use crate::game::Game;
+use crate::game::{Game, GameResult};
 use crate::player::Player;
 use crate::ui::Ui;
 
@@ -26,7 +26,7 @@ impl<T: Ui> TicTacToe<T> {
 
             if let Some((player1, player2)) = self.create_players() {
                 loop {
-                    Game::new(&player1, &player2, &self.ui).start();
+                    let _result = Game::new(&player1, &player2, &self.ui).start();
 
                     if !self.ui.keep_playing() {
                         break;

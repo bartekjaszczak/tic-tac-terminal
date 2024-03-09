@@ -20,8 +20,11 @@ impl Player {
         match self {
             Self::Human(name) => ui.get_move(name, additional_message),
             Self::CPU => {
-                thread::sleep(Duration::from_millis(200));
-                minimax::calculate_best_move(board)},
+                if !cfg!(test) {
+                    thread::sleep(Duration::from_millis(200));
+                }
+                minimax::calculate_best_move(board)
+            }
         }
     }
 }

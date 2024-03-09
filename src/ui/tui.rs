@@ -48,12 +48,12 @@ impl Ui for TerminalUi {
     fn notify_result(&self, result: &GameResult) {
         let message = match result {
             GameResult::Draw => format!("{}", "It's a draw!\n".white()),
-            GameResult::PlayerWon(winner, winning_line_index) => {
+            GameResult::PlayerWon(_winner_index, winner_name, winning_line_index) => {
                 let winning_line = WINNING_LINES[*winning_line_index];
                 self.winning_line.replace(Some(winning_line));
 
                 let winner_name = TerminalUi::format_text_by_player(
-                    winner,
+                    winner_name,
                     &self.board.borrow()[winning_line[0]],
                 );
                 format!("{} won!\n", winner_name.underlined())
@@ -292,7 +292,7 @@ mod tests {
     #[test]
     fn player_won() {
         let tui = TerminalUi::new();
-        let result = GameResult::PlayerWon(String::from("Steve"), 3);
+        let result = GameResult::PlayerWon(0, String::from("Steve"), 3);
 
         tui.notify_result(&result);
 

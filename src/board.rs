@@ -268,6 +268,30 @@ mod tests {
     }
 
     #[test]
+    fn empty_board_check() {
+        let mut board = Board::new();
+
+        assert!(
+            board.is_empty(),
+            "Board is empty - method should return true"
+        );
+
+        board[4] = Cell::O;
+
+        assert!(
+            !board.is_empty(),
+            "Board is almost empty - method should return true"
+        );
+
+        let board = Board::from([Cell::O; 9]);
+
+        assert!(
+            !board.is_empty(),
+            "Board is full - method should return false"
+        );
+    }
+
+    #[test]
     fn possible_moves() {
         let board = Board::new();
         let possible_moves = board.get_possible_moves();
