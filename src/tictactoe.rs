@@ -1,3 +1,5 @@
+//! This module contains main Tic-Tac-Toe application (which has the main game loop).
+
 use crate::game::{Game, GameResult};
 use crate::player::Player;
 use crate::ui::Ui;
@@ -17,6 +19,16 @@ pub struct TicTacToe<'a, T: Ui> {
 }
 
 impl<'a, T: Ui> TicTacToe<'a, T> {
+    /// Creates new instance of Tic-Tac-Toe game. Accepts one argument - UI backend.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tic_tac_toe::{TerminalUi, TicTacToe};
+    ///
+    /// let ui = TerminalUi::new();
+    /// let game = TicTacToe::new(&ui);
+    /// ```
     pub fn new(ui: &'a T) -> Self {
         Self {
             ui,
@@ -25,6 +37,21 @@ impl<'a, T: Ui> TicTacToe<'a, T> {
         }
     }
 
+    /// Starts the Tic-Tac-Toe application.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use tic_tac_toe::{TerminalUi, TicTacToe};
+    ///
+    /// let ui = TerminalUi::new();
+    /// let mut game = TicTacToe::new(&ui);
+    /// game.start();
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics at every time the UI panics (pretty much only on stdin and stdout errors).
     pub fn start(&mut self) {
         loop {
             self.mode = Some(self.ui.select_mode());

@@ -1,3 +1,6 @@
+//! This module contains representation of the player instance (both human player as well as 'AI'
+//! player). Provides interface for getting moves from the player.
+
 mod minimax;
 
 use crate::board::{Board, BoardMove};

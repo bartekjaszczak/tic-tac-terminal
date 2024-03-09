@@ -1,3 +1,6 @@
+//! This module contains representation of single Tic-Tac-Toe game, as well as its result and
+//! current state.
+
 use crate::board::{Board, BoardMove, Cell, WINNING_LINES};
 use crate::player::Player;
 use crate::ui::Ui;

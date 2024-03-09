@@ -1,4 +1,6 @@
-mod gui;
+//! This module contains the Ui trait, which has to be implemented for every UI instance (such as
+//! terminal UI and graphic UI). Also provides a mock UI object which can be helpful in testing.
+
 mod tui;
 
 use crate::board::{Board, BoardMove};

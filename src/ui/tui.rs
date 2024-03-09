@@ -1,3 +1,6 @@
+//! This module contains implementation of terminal handling. Provides methods for gathering user
+//! input and displaying the board and messages to the user.
+
 use super::Ui;
 use crate::board::{Board, BoardMove, Cell, WINNING_LINES};
 use crate::game::GameResult;
@@ -145,6 +148,16 @@ impl Ui for TerminalUi {
 }
 
 impl TerminalUi {
+    /// Creates new instance of terminal backend. Required for starting the Tic-Tac-Toe game in the
+    /// terminal.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tic_tac_toe::TerminalUi;
+    ///
+    /// let ui = TerminalUi::new();
+    /// ```
     pub fn new() -> TerminalUi {
         TerminalUi {
             board: RefCell::new(Board::new()),

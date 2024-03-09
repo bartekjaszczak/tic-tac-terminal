@@ -1,3 +1,6 @@
+//! This module contains structs which represent the board and specific cells, as well as provides
+//! some helper methods to manipulate them.
+
 use crate::game::WinningLineIndex;
 use std::{
     fmt,

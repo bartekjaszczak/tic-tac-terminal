@@ -1,3 +1,5 @@
+//! This module contains minimax algorithm implementation.
+
 use crate::board::{Board, BoardMove, Cell, WINNING_LINES};
 use rand::Rng;
 use std::cmp;
