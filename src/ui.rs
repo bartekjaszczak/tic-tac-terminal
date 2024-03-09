@@ -85,8 +85,8 @@ pub mod tests {
     }
 
     impl MockUiBuilder {
-        pub fn new() -> MockUiBuilder {
-            MockUiBuilder {
+        pub fn new() -> Self {
+            Self {
                 expected_moves: RefCell::new(vec![]),
                 expected_names: RefCell::new(vec![]),
                 update_scores_count: RefCell::new(0),
@@ -95,12 +95,12 @@ pub mod tests {
             }
         }
 
-        pub fn expected_moves(self, expected_moves: Vec<BoardMove>) -> MockUiBuilder {
+        pub fn expected_moves(self, expected_moves: Vec<BoardMove>) -> Self {
             self.expected_moves.replace(expected_moves);
             self
         }
 
-        pub fn expected_names(self, expected_names: Vec<String>) -> MockUiBuilder {
+        pub fn expected_names(self, expected_names: Vec<String>) -> Self {
             self.expected_names.replace(expected_names);
             self
         }

@@ -17,8 +17,8 @@ pub struct TicTacToe<'a, T: Ui> {
 }
 
 impl<'a, T: Ui> TicTacToe<'a, T> {
-    pub fn new(ui: &T) -> TicTacToe<T> {
-        TicTacToe {
+    pub fn new(ui: &'a T) -> Self {
+        Self {
             ui,
             mode: None,
             scores: (0, 0),

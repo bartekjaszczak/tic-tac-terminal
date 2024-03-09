@@ -17,7 +17,7 @@ const PREFIX: &str = " > ";
 
 impl Ui for TerminalUi {
     fn get_move(&self, player_name: &str, additional_message: Option<&str>) -> BoardMove {
-        let player_name = TerminalUi::format_text_by_player(
+        let player_name = Self::format_text_by_player(
             player_name,
             &self.board.borrow().current_player_symbol(),
         );
@@ -52,7 +52,7 @@ impl Ui for TerminalUi {
                 let winning_line = WINNING_LINES[*winning_line_index];
                 self.winning_line.replace(Some(winning_line));
 
-                let winner_name = TerminalUi::format_text_by_player(
+                let winner_name = Self::format_text_by_player(
                     winner_name,
                     &self.board.borrow()[winning_line[0]],
                 );
@@ -161,7 +161,7 @@ impl TerminalUi {
             .map(|(index, cell)| {
                 let mut styled_cell = match cell {
                     Cell::Empty(_) => format!("[{}]", cell).grey(),
-                    _ => TerminalUi::format_text_by_player(format!(" {} ", cell).as_str(), cell),
+                    _ => Self::format_text_by_player(format!(" {} ", cell).as_str(), cell),
                 };
 
                 if let Some(cell_positions) = self.winning_line.borrow().as_ref() {
@@ -174,7 +174,7 @@ impl TerminalUi {
             })
             .collect();
 
-        TerminalUi::clear_screen();
+        Self::clear_screen();
 
         println!("\n   +-----+-----+-----+");
         println!("   |     |     |     |");

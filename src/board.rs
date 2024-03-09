@@ -41,9 +41,9 @@ pub const WINNING_LINES: [[usize; 3]; 8] = [
 impl fmt::Display for Cell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Cell::Empty(index) => write!(f, "{index}"),
-            Cell::O => write!(f, "O"),
-            Cell::X => write!(f, "X"),
+            Self::Empty(index) => write!(f, "{index}"),
+            Self::O => write!(f, "O"),
+            Self::X => write!(f, "X"),
         }
     }
 }
@@ -77,22 +77,22 @@ impl<'a> Iterator for BoardIterator<'a> {
 }
 
 impl Cell {
-    pub fn opposite(&self) -> Cell {
+    pub fn opposite(&self) -> Self {
         match *self {
-            Cell::O => Cell::X,
-            Cell::X => Cell::O,
-            Cell::Empty(n) => Cell::Empty(n),
+            Self::O => Self::X,
+            Self::X => Self::O,
+            Self::Empty(n) => Self::Empty(n),
         }
     }
 }
 
 impl BoardMove {
-    pub fn try_new(num: usize) -> Result<BoardMove, ()> {
+    pub fn try_new(num: usize) -> Result<Self, ()> {
         if num < 1 || num > 9 {
             return Err(());
         }
 
-        Ok(BoardMove { index: num - 1 })
+        Ok(Self { index: num - 1 })
     }
 
     pub fn index(&self) -> usize {
@@ -101,17 +101,17 @@ impl BoardMove {
 }
 
 impl Board {
-    pub fn new() -> Board {
+    pub fn new() -> Self {
         let mut cells = [Cell::Empty('0'); 9];
         for i in 0..9 {
             let ascii_num = ((i + 1) as u8 + b'0') as char;
             cells[i] = Cell::Empty(ascii_num); // These values serve as cell position
         }
-        Board { cells }
+        Self { cells }
     }
 
-    pub fn from(cells: Cells) -> Board {
-        Board { cells }
+    pub fn from(cells: Cells) -> Self {
+        Self { cells }
     }
 
     pub fn iter(&self) -> BoardIterator {

@@ -26,8 +26,8 @@ pub struct Game<'a, T: Ui> {
 }
 
 impl<'a, T: Ui> Game<'a, T> {
-    pub fn new(player1: &'a Player, player2: &'a Player, ui_backend: &'a T) -> Game<'a, T> {
-        Game {
+    pub fn new(player1: &'a Player, player2: &'a Player, ui_backend: &'a T) -> Self {
+        Self {
             board: Board::new(),
             players: [player1, player2],
             current_player: 0,
