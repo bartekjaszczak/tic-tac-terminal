@@ -88,11 +88,7 @@ impl<'a, T: Ui> Game<'a, T> {
                 Cell::Empty(_) => panic!("Winning line cannot be empty"),
             };
 
-            let winner_name = if let Player::Human(name) = &self.players[winner] {
-                name.clone()
-            } else {
-                String::from("CPU")
-            };
+            let winner_name = self.players[winner].get_name().to_owned();
 
             self.game_state = GameState::Finished(GameResult::PlayerWon(
                 winner,
@@ -153,6 +149,16 @@ mod tests {
 
         fn keep_playing(&self) -> bool {
             panic!("keep_playing shouldn't be called");
+        }
+
+        fn update_scores(
+            &self,
+            _player1_name: &str,
+            _player1_score: i32,
+            _player2_name: &str,
+            _player2_score: i32,
+        ) {
+            panic!("update_scores shouldn't be called");
         }
     }
 

@@ -115,12 +115,32 @@ impl Ui for TerminalUi {
                 "y" | "yes" => true,
                 "n" | "no" => false,
                 _ => {
-                    print!("Incorrect input! Do you want to play again? Enter [y]es or [no]: ");
+                    print!("Incorrect input! Do you want to play again? Enter [y]es or [n]o: ");
                     io::stdout().flush().unwrap();
                     continue;
                 }
             };
         }
+    }
+
+    fn update_scores(
+        &self,
+        player1_name: &str,
+        player1_score: i32,
+        player2_name: &str,
+        player2_score: i32,
+    ) {
+        println!("Current score:");
+        println!(
+            "{}: {}",
+            Self::format_text_by_player(player1_name, &Cell::O),
+            player1_score
+        );
+        println!(
+            "{}: {}",
+            Self::format_text_by_player(player2_name, &Cell::X),
+            player2_score
+        );
     }
 }
 

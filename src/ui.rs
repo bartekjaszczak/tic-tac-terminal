@@ -14,4 +14,5 @@ pub trait Ui {
     fn get_player_name(&self, name_placeholder: &str) -> String;
     fn select_mode(&self) -> GameMode;
     fn keep_playing(&self) -> bool;
+    fn update_scores(&self, player1_name: &str, player1_score: i32, player2_name: &str, player2_score: i32);
 }

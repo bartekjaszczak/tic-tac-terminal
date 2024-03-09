@@ -27,6 +27,13 @@ impl Player {
             }
         }
     }
+
+    pub fn get_name(&self) -> &str {
+        match self {
+            Self::Human(name) => name,
+            Self::CPU => "CPU",
+        }
+    }
 }
 
 #[cfg(test)]
@@ -63,6 +70,16 @@ mod tests {
         fn keep_playing(&self) -> bool {
             panic!("keep_playing shouldn't be called");
         }
+
+        fn update_scores(
+            &self,
+            _player1_name: &str,
+            _player1_score: i32,
+            _player2_name: &str,
+            _player2_score: i32,
+        ) {
+            panic!("update_scores shouldn't be called");
+        }
     }
 
     #[test]
@@ -88,5 +105,16 @@ mod tests {
         let cpu = Player::CPU;
 
         cpu.get_move(&fake_board, &mock_ui, None);
+    }
+
+    #[test]
+    fn get_player_name() {
+        let human = Player::Human(String::from("Steve"));
+
+        assert_eq!(human.get_name(), "Steve");
+
+        let cpu = Player::CPU;
+
+        assert_eq!(cpu.get_name(), "CPU");
     }
 }
