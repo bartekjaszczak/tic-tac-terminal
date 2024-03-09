@@ -3,20 +3,7 @@ use rand::Rng;
 use std::cmp;
 
 pub fn calculate_best_move(board: &Board) -> BoardMove {
-    let maximizing_player_symbol = if board
-        .iter()
-        .filter(|&cell| match &cell {
-            &Cell::O | Cell::X => true,
-            _ => false,
-        })
-        .count()
-        % 2
-        == 0
-    {
-        Cell::O
-    } else {
-        Cell::X
-    };
+    let maximizing_player_symbol = board.current_player_symbol();
 
     let mut best_moves = vec![];
     let mut best_eval = -1000;

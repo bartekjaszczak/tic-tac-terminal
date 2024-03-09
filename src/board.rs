@@ -81,7 +81,7 @@ impl Cell {
         match *self {
             Cell::O => Cell::X,
             Cell::X => Cell::O,
-            Cell::Empty(n) => Cell::Empty(n)
+            Cell::Empty(n) => Cell::Empty(n),
         }
     }
 }
@@ -154,6 +154,24 @@ impl Board {
         }
 
         None
+    }
+
+    pub fn current_player_symbol(&self) -> Cell {
+        // We always assume that 'O' goes first
+        if self
+            .iter()
+            .filter(|&cell| match &cell {
+                &Cell::O | Cell::X => true,
+                _ => false,
+            })
+            .count()
+            % 2
+            == 0
+        {
+            Cell::O
+        } else {
+            Cell::X
+        }
     }
 }
 
@@ -365,5 +383,44 @@ mod tests {
         if let None = board.get_winning_line() {
             panic!("There should be winnig line - three 'O's in column 1");
         }
+    }
+
+    #[test]
+    fn current_player_symbol() {
+        let board = Board::new();
+
+        assert_eq!(
+            board.current_player_symbol(),
+            Cell::O,
+            "'O' should always be the first player"
+        );
+
+        let board = Board::from([
+            Cell::O,
+            Cell::X,
+            Cell::O,
+            Cell::X,
+            Cell::O,
+            Cell::X,
+            Cell::O,
+            Cell::X,
+            Cell::Empty('9'),
+        ]);
+
+        assert_eq!(board.current_player_symbol(), Cell::O, "Now is O's turn");
+
+        let board = Board::from([
+            Cell::O,
+            Cell::Empty('2'),
+            Cell::O,
+            Cell::X,
+            Cell::O,
+            Cell::X,
+            Cell::O,
+            Cell::X,
+            Cell::Empty('9'),
+        ]);
+
+        assert_eq!(board.current_player_symbol(), Cell::X, "Now is X's turn");
     }
 }
