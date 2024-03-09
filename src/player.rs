@@ -22,7 +22,7 @@ impl Player {
     }
 
     fn calculate_best_move(board: &Board) -> BoardMove {
-        let maximizing_player_marker = if board
+        let maximizing_player_symbol = if board
             .iter()
             .filter(|&cell| match &cell {
                 &Cell::O | Cell::X => true,
@@ -42,9 +42,9 @@ impl Player {
 
         for board_move in board.get_possible_moves() {
             let mut next_board = board.clone();
-            next_board[board_move.index()] = maximizing_player_marker;
+            next_board[board_move.index()] = maximizing_player_symbol;
 
-            let score = Player::minimax(&next_board, &maximizing_player_marker, false);
+            let score = Player::minimax(&next_board, &maximizing_player_symbol, false);
             if score > best_eval {
                 best_eval = score;
                 best_moves.clear();
@@ -59,11 +59,11 @@ impl Player {
         best_moves[random_index]
     }
 
-    fn minimax(board: &Board, maximizing_player_marker: &Cell, is_maximizing: bool) -> i32 {
+    fn minimax(board: &Board, maximizing_player_symbol: &Cell, is_maximizing: bool) -> i32 {
         if let Some(winning_line_index) = board.get_winning_line() {
-            let winner_marker = board[WINNING_LINES[winning_line_index][0]];
+            let winner_symbol = board[WINNING_LINES[winning_line_index][0]];
 
-            return if &winner_marker == maximizing_player_marker {
+            return if &winner_symbol == maximizing_player_symbol {
                 10
             } else {
                 -10
@@ -72,18 +72,18 @@ impl Player {
             return 0;
         }
 
-        let (cmp_function, initial_score, current_player_marker): (fn(i32, i32) -> i32, i32, Cell) =
+        let (cmp_function, initial_score, current_player_symbol): (fn(i32, i32) -> i32, i32, Cell) =
             if is_maximizing {
-                (cmp::max, -1000, *maximizing_player_marker)
+                (cmp::max, -1000, *maximizing_player_symbol)
             } else {
-                (cmp::min, 1000, maximizing_player_marker.opposite())
+                (cmp::min, 1000, maximizing_player_symbol.opposite())
             };
 
         let mut best_score = initial_score;
         for board_move in board.get_possible_moves() {
             let mut next_board = board.clone();
-            next_board[board_move.index()] = current_player_marker;
-            let value = Player::minimax(&next_board, maximizing_player_marker, !is_maximizing);
+            next_board[board_move.index()] = current_player_symbol;
+            let value = Player::minimax(&next_board, maximizing_player_symbol, !is_maximizing);
             best_score = cmp_function(best_score, value);
         }
         return best_score;

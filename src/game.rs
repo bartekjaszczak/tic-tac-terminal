@@ -71,7 +71,7 @@ impl<'a, T: Ui> Game<'a, T> {
     }
 
     fn current_player_make_move(&mut self, board_move: BoardMove) {
-        self.board[board_move.index()] = self.current_player_marker();
+        self.board[board_move.index()] = self.current_player_symbol();
     }
 
     fn check_if_over(&mut self) {
@@ -106,7 +106,7 @@ impl<'a, T: Ui> Game<'a, T> {
         }
     }
 
-    fn current_player_marker(&self) -> Cell {
+    fn current_player_symbol(&self) -> Cell {
         if self.current_player == 0 {
             Cell::O
         } else {
