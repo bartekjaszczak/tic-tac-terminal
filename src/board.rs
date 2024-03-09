@@ -124,6 +124,10 @@ impl Board {
         !self.iter().any(|&cell| matches!(cell, Cell::Empty(_)))
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.iter().all(|&cell| matches!(cell, Cell::Empty(_)))
+    }
+
     pub fn get_possible_moves(&self) -> Vec<BoardMove> {
         let mut moves = Vec::new();
 

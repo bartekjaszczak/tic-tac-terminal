@@ -2,6 +2,8 @@ mod minimax;
 
 use crate::board::{Board, BoardMove};
 use crate::ui::Ui;
+use std::thread;
+use std::time::Duration;
 
 pub enum Player {
     Human(String),
@@ -17,7 +19,9 @@ impl Player {
     ) -> BoardMove {
         match self {
             Self::Human(name) => ui.get_move(name, additional_message),
-            Self::CPU => minimax::calculate_best_move(board),
+            Self::CPU => {
+                thread::sleep(Duration::from_millis(200));
+                minimax::calculate_best_move(board)},
         }
     }
 }
@@ -26,6 +30,7 @@ impl Player {
 mod tests {
     use super::*;
     use crate::game::GameResult;
+    use crate::tictactoe::GameMode;
 
     struct MockUi {
         returned_move: Option<BoardMove>,
@@ -42,6 +47,18 @@ mod tests {
 
         fn notify_result(&self, _result: &GameResult) {
             panic!("notify_result shouldn't be called");
+        }
+
+        fn get_player_name(&self, _player_name: &str) -> String {
+            panic!("get_player_name shouldn't be called");
+        }
+
+        fn select_mode(&self) -> GameMode {
+            panic!("select_mode shouldn't be called");
+        }
+
+        fn keep_playing(&self) -> bool {
+            panic!("keep_playing shouldn't be called");
         }
     }
 

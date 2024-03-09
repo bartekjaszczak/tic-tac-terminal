@@ -1,4 +1,4 @@
-use crate::board::{Board, Cell, BoardMove, WINNING_LINES};
+use crate::board::{Board, BoardMove, Cell, WINNING_LINES};
 use crate::player::Player;
 use crate::ui::Ui;
 
@@ -117,9 +117,10 @@ impl<'a, T: Ui> Game<'a, T> {
 
 #[cfg(test)]
 mod tests {
-    use std::cell::RefCell;
-
     use super::*;
+
+    use crate::tictactoe::GameMode;
+    use std::cell::RefCell;
 
     struct MockUi {
         expected_moves: RefCell<Vec<BoardMove>>,
@@ -137,8 +138,20 @@ mod tests {
             // Don't do anything
         }
 
-        fn notify_result(&self, _result: &crate::game::GameResult) {
+        fn notify_result(&self, _result: &GameResult) {
             *self.notify_result_calls.borrow_mut() += 1;
+        }
+
+        fn get_player_name(&self, _player_name: &str) -> String {
+            panic!("get_player_name shouldn't be called");
+        }
+
+        fn select_mode(&self) -> GameMode {
+            panic!("select_mode shouldn't be called");
+        }
+
+        fn keep_playing(&self) -> bool {
+            panic!("keep_playing shouldn't be called");
         }
     }
 

@@ -1,6 +1,7 @@
 use super::Ui;
 use crate::board::{Board, BoardMove, Cell, WINNING_LINES};
 use crate::game::GameResult;
+use crate::tictactoe::GameMode;
 use crossterm::style::{StyledContent, Stylize};
 use std::{
     cell::RefCell,
@@ -22,9 +23,9 @@ impl Ui for TerminalUi {
         );
 
         if let Some(msg) = additional_message {
-            println!("{PREFIX}{}, {}. Try again: ", player_name, msg);
+            print!("{PREFIX}{}, {}. Try again: ", player_name, msg);
         } else {
-            println!("{PREFIX}{}, your move! Enter a number: ", player_name,);
+            print!("{PREFIX}{}, your move! Enter a number: ", player_name,);
         }
 
         io::stdout().flush().unwrap();
@@ -35,6 +36,11 @@ impl Ui for TerminalUi {
     fn update_board(&self, board: &Board) {
         // Update local board copy
         self.board.replace(board.clone());
+
+        if board.is_empty() {
+            // New game - clear previous win
+            self.winning_line.replace(None);
+        }
 
         self.draw_board();
     }
@@ -58,6 +64,63 @@ impl Ui for TerminalUi {
 
         println!("{PREFIX}{message}");
         io::stdout().flush().unwrap();
+    }
+
+    fn get_player_name(&self, player_name: &str) -> String {
+        Self::clear_screen();
+
+        print!("{}, enter your name: ", player_name);
+        io::stdout().flush().unwrap();
+
+        Self::get_user_input()
+    }
+
+    fn select_mode(&self) -> GameMode {
+        Self::clear_screen();
+
+        println!("Select game mode!");
+        Self::print_game_modes();
+        print!("Your choice: ");
+        io::stdout().flush().unwrap();
+
+        loop {
+            let user_input = Self::get_user_input();
+
+            break match user_input.to_lowercase().as_str() {
+                "1" | "[1]" => GameMode::PlayerVsPlayer,
+                "2" | "[2]" => GameMode::PlayerVsCpu,
+                "3" | "[3]" => GameMode::CpuVsPlayer,
+                "4" | "[4]" => GameMode::CpuVsCpu,
+                "0" | "q" => GameMode::Quit,
+                _ => {
+                    println!("Incorrect input! Here are the options again:");
+                    Self::print_game_modes();
+                    print!("Enter a number between 1 and 4. To quit, enter 0 or q: ");
+                    io::stdout().flush().unwrap();
+
+                    continue;
+                }
+            };
+        }
+    }
+
+    fn keep_playing(&self) -> bool {
+        print!("Again? y/n: ");
+        io::stdout().flush().unwrap();
+
+        loop {
+            let user_input = Self::get_user_input();
+
+            break match user_input.to_lowercase().as_str() {
+                "y" | "yes" => true,
+                "n" | "no" => false,
+                _ => {
+                    print!("Incorrect input! Do you want to play again? Enter [y]es or [no]: ");
+                    io::stdout().flush().unwrap();
+                    continue;
+                }
+            };
+        }
     }
 }
 
@@ -129,7 +192,7 @@ impl TerminalUi {
                     match board_move {
                         Ok(board_move) => board_move,
                         Err(_) => {
-                            println!("{PREFIX}Your input must be between 1 and 9! Try again: ");
+                            print!("{PREFIX}Your input must be between 1 and 9! Try again: ");
                             io::stdout().flush().unwrap();
 
                             continue;
@@ -137,7 +200,7 @@ impl TerminalUi {
                     }
                 }
                 Err(_) => {
-                    println!("{PREFIX}Your input must be a number between 1 and 9! Try again: ");
+                    print!("{PREFIX}Your input must be a number between 1 and 9! Try again: ");
                     io::stdout().flush().unwrap();
 
                     continue;
@@ -165,6 +228,14 @@ impl TerminalUi {
             &Cell::X => text.to_string().bold().green(),
             _ => text.to_string().grey(),
         }
+    }
+
+    fn print_game_modes() {
+        println!("[1] Player vs Player");
+        println!("[2] Player vs CPU (Player starts)");
+        println!("[3] CPU vs Player (CPU starts)");
+        println!("[4] CPU vs CPU");
+        println!("[0 or q] to quit!")
     }
 }
 
@@ -225,6 +296,18 @@ mod tests {
 
         tui.notify_result(&result);
 
-        assert_eq!(*tui.winning_line.borrow(), Some(WINNING_LINES[3]));
+        assert_eq!(
+            *tui.winning_line.borrow(),
+            Some(WINNING_LINES[3]),
+            "Winning line should be stored"
+        );
+
+        tui.update_board(&Board::new()); // New game starts
+
+        assert_eq!(
+            *tui.winning_line.borrow(),
+            None,
+            "Winning line should be deleted as soon as new game starts"
+        );
     }
 }

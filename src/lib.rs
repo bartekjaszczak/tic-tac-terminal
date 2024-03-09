@@ -1,8 +1,8 @@
 mod board;
-mod player;
-mod ui;
 mod game;
+mod player;
+mod tictactoe;
+mod ui;
 
-pub use player::Player;
+pub use tictactoe::TicTacToe;
 pub use ui::TerminalUi;
-pub use game::Game;
