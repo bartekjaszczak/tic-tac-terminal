@@ -1,5 +1,5 @@
-pub mod tui;
-pub mod gui;
+mod tui;
+mod gui;
 
 use crate::board::{Board, BoardMove};
 use crate::game::GameResult;
