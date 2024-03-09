@@ -1,7 +1,7 @@
 use super::Ui;
-use crate::board::{Board, Cell, BoardMove, WINNING_LINES};
+use crate::board::{Board, BoardMove, Cell, WINNING_LINES};
 use crate::game::GameResult;
-use crossterm::style::Stylize;
+use crossterm::style::{StyledContent, Stylize};
 use std::{
     cell::RefCell,
     io::{self, Write},
@@ -16,17 +16,15 @@ const PREFIX: &str = " > ";
 
 impl Ui for TerminalUi {
     fn get_move(&self, player_name: &str, additional_message: Option<&str>) -> BoardMove {
+        let player_name = TerminalUi::format_text_by_player(
+            player_name,
+            &self.board.borrow().current_player_symbol(),
+        );
+
         if let Some(msg) = additional_message {
-            println!(
-                "{PREFIX}{}, {}. Try again: ",
-                player_name.green().bold(),
-                msg
-            );
+            println!("{PREFIX}{}, {}. Try again: ", player_name, msg);
         } else {
-            println!(
-                "{PREFIX}{}, your move! Enter a number: ",
-                player_name.green().bold()
-            );
+            println!("{PREFIX}{}, your move! Enter a number: ", player_name,);
         }
 
         io::stdout().flush().unwrap();
@@ -45,9 +43,14 @@ impl Ui for TerminalUi {
         let message = match result {
             GameResult::Draw => format!("{}", "It's a draw!\n".white()),
             GameResult::PlayerWon(winner, winning_line_index) => {
-                self.winning_line
-                    .replace(Some(WINNING_LINES[*winning_line_index]));
-                format!("{} won!\n", &winner.clone().green().bold().underlined())
+                let winning_line = WINNING_LINES[*winning_line_index];
+                self.winning_line.replace(Some(winning_line));
+
+                let winner_name = TerminalUi::format_text_by_player(
+                    winner,
+                    &self.board.borrow()[winning_line[0]],
+                );
+                format!("{} won!\n", winner_name.underlined())
             }
         };
 
@@ -74,9 +77,8 @@ impl TerminalUi {
             .enumerate()
             .map(|(index, cell)| {
                 let mut styled_cell = match cell {
-                    Cell::Empty(position) => format!("[{}]", position).grey(),
-                    Cell::O => " O ".to_string().dark_blue().bold(),
-                    Cell::X => " X ".to_string().dark_magenta().bold(),
+                    Cell::Empty(_) => format!("[{}]", cell).grey(),
+                    _ => TerminalUi::format_text_by_player(format!(" {} ", cell).as_str(), cell),
                 };
 
                 if let Some(cell_positions) = self.winning_line.borrow().as_ref() {
@@ -155,6 +157,14 @@ impl TerminalUi {
         print!("\x1B[2J");
         print!("\x1B[H");
         io::stdout().flush().unwrap();
+    }
+
+    fn format_text_by_player(text: &str, current_player_symbol: &Cell) -> StyledContent<String> {
+        match current_player_symbol {
+            &Cell::O => text.to_string().bold().blue(),
+            &Cell::X => text.to_string().bold().green(),
+            _ => text.to_string().grey(),
+        }
     }
 }
 
