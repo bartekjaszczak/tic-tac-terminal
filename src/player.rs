@@ -39,55 +39,14 @@ impl Player {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::game::GameResult;
-    use crate::tictactoe::GameMode;
-
-    struct MockUi {
-        returned_move: Option<BoardMove>,
-    }
-
-    impl Ui for MockUi {
-        fn get_move(&self, _player_name: &str, _additional_message: Option<&str>) -> BoardMove {
-            self.returned_move.unwrap().clone()
-        }
-
-        fn update_board(&self, _board: &Board) {
-            panic!("update_board shouldn't be called");
-        }
-
-        fn notify_result(&self, _result: &GameResult) {
-            panic!("notify_result shouldn't be called");
-        }
-
-        fn get_player_name(&self, _player_name: &str) -> String {
-            panic!("get_player_name shouldn't be called");
-        }
-
-        fn select_mode(&self) -> GameMode {
-            panic!("select_mode shouldn't be called");
-        }
-
-        fn keep_playing(&self) -> bool {
-            panic!("keep_playing shouldn't be called");
-        }
-
-        fn update_scores(
-            &self,
-            _player1_name: &str,
-            _player1_score: i32,
-            _player2_name: &str,
-            _player2_score: i32,
-        ) {
-            panic!("update_scores shouldn't be called");
-        }
-    }
+    use crate::ui::tests::MockUi;
 
     #[test]
     fn get_human_move() {
         let returned_move = BoardMove::try_new(3).unwrap();
-        let mock_ui = MockUi {
-            returned_move: Some(returned_move.clone()),
-        };
+        let mock_ui = MockUi::builder()
+            .expected_moves(vec![returned_move.clone()])
+            .build();
         let fake_board = Board::new();
         let player = Player::Human(String::from("Steve"));
 
@@ -98,9 +57,7 @@ mod tests {
 
     #[test]
     fn get_cpu_move() {
-        let mock_ui = MockUi {
-            returned_move: None,
-        };
+        let mock_ui = MockUi::builder().build();
         let fake_board = Board::new();
         let cpu = Player::CPU;
 

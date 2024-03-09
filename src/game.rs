@@ -115,81 +115,18 @@ impl<'a, T: Ui> Game<'a, T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    use crate::tictactoe::GameMode;
-    use std::cell::RefCell;
-
-    struct MockUi {
-        expected_moves: RefCell<Vec<BoardMove>>,
-        notify_result_calls: RefCell<u32>,
-        get_move_calls: RefCell<u32>,
-    }
-
-    impl Ui for MockUi {
-        fn get_move(&self, _player_name: &str, _additional_message: Option<&str>) -> BoardMove {
-            *self.get_move_calls.borrow_mut() += 1;
-            self.expected_moves.borrow_mut().remove(0) // Make sure there are enough fake moves
-        }
-
-        fn update_board(&self, _board: &Board) {
-            // Don't do anything
-        }
-
-        fn notify_result(&self, _result: &GameResult) {
-            *self.notify_result_calls.borrow_mut() += 1;
-        }
-
-        fn get_player_name(&self, _player_name: &str) -> String {
-            panic!("get_player_name shouldn't be called");
-        }
-
-        fn select_mode(&self) -> GameMode {
-            panic!("select_mode shouldn't be called");
-        }
-
-        fn keep_playing(&self) -> bool {
-            panic!("keep_playing shouldn't be called");
-        }
-
-        fn update_scores(
-            &self,
-            _player1_name: &str,
-            _player1_score: i32,
-            _player2_name: &str,
-            _player2_score: i32,
-        ) {
-            panic!("update_scores shouldn't be called");
-        }
-    }
-
-    impl MockUi {
-        fn with_expected_moves(expected_moves: Vec<BoardMove>) -> MockUi {
-            MockUi {
-                expected_moves: RefCell::new(expected_moves),
-                notify_result_calls: RefCell::new(0),
-                get_move_calls: RefCell::new(0),
-            }
-        }
-
-        fn new() -> MockUi {
-            MockUi {
-                expected_moves: RefCell::new(vec![]),
-                notify_result_calls: RefCell::new(0),
-                get_move_calls: RefCell::new(0),
-            }
-        }
-    }
+    use crate::ui::tests::MockUi;
 
     #[test]
     fn announce_result() {
-        let mock_ui = MockUi::new();
+        let mock_ui = MockUi::builder().build();
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
         let mut game = Game::new(&p1, &p2, &mock_ui);
 
         game.announce_result(); // GameState::NotStarted by default
         assert_eq!(
-            *mock_ui.notify_result_calls.borrow(),
+            mock_ui.notify_result_calls(),
             0,
             "Ui shouldn't be notified if game isn't finished"
         );
@@ -197,7 +134,7 @@ mod tests {
         game.game_state = GameState::Ongoing;
         game.announce_result();
         assert_eq!(
-            *mock_ui.notify_result_calls.borrow(),
+            mock_ui.notify_result_calls(),
             0,
             "Ui shouldn't be notified if game isn't finished"
         );
@@ -205,7 +142,7 @@ mod tests {
         game.game_state = GameState::Finished(GameResult::Draw);
         game.announce_result();
         assert_eq!(
-            *mock_ui.notify_result_calls.borrow(),
+            mock_ui.notify_result_calls(),
             1,
             "Ui should be notified when game is finished"
         );
@@ -213,7 +150,7 @@ mod tests {
 
     #[test]
     fn player1_win_check() {
-        let mock_ui = MockUi::new();
+        let mock_ui = MockUi::builder().build();
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
         let mut game = Game::new(&p1, &p2, &mock_ui);
@@ -245,7 +182,7 @@ mod tests {
 
     #[test]
     fn player2_win_check() {
-        let mock_ui = MockUi::new();
+        let mock_ui = MockUi::builder().build();
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
         let mut game = Game::new(&p1, &p2, &mock_ui);
@@ -277,7 +214,7 @@ mod tests {
 
     #[test]
     fn draw_check() {
-        let mock_ui = MockUi::new();
+        let mock_ui = MockUi::builder().build();
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
         let mut game = Game::new(&p1, &p2, &mock_ui);
@@ -306,7 +243,7 @@ mod tests {
 
     #[test]
     fn player_make_move() {
-        let mock_ui = MockUi::new();
+        let mock_ui = MockUi::builder().build();
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
         let mut game = Game::new(&p1, &p2, &mock_ui);
@@ -352,11 +289,13 @@ mod tests {
 
     #[test]
     fn players_take_turn() {
-        let mock_ui = MockUi::with_expected_moves(vec![
-            BoardMove::try_new(1).unwrap(), // Player1 goes top left
-            BoardMove::try_new(2).unwrap(), // Player2 goes top middle
-            BoardMove::try_new(4).unwrap(), // Player1 goes middle left
-        ]);
+        let mock_ui = MockUi::builder()
+            .expected_moves(vec![
+                BoardMove::try_new(1).unwrap(), // Player1 goes top left
+                BoardMove::try_new(2).unwrap(), // Player2 goes top middle
+                BoardMove::try_new(4).unwrap(), // Player1 goes middle left
+            ])
+            .build();
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
         let mut game = Game::new(&p1, &p2, &mock_ui);
@@ -438,7 +377,7 @@ mod tests {
 
     #[test]
     fn start_works_only_if_game_is_not_started() {
-        let mock_ui = MockUi::new();
+        let mock_ui = MockUi::builder().build();
         let p1 = Player::CPU;
         let p2 = Player::CPU;
         let mut game = Game::new(&p1, &p2, &mock_ui);
@@ -458,13 +397,13 @@ mod tests {
         assert!(matches!(result, Ok(_)), "There should be a result");
 
         assert_eq!(
-            *mock_ui.get_move_calls.borrow(),
+            mock_ui.get_move_calls(),
             0,
             "There should be no effect if start() was called in NotStarted state"
         );
 
         assert_eq!(
-            *mock_ui.notify_result_calls.borrow(),
+            mock_ui.notify_result_calls(),
             0,
             "UI should only be notified if start() was called in NotStarted state"
         );
@@ -474,7 +413,7 @@ mod tests {
         assert!(matches!(result, Ok(_)), "There should be a result");
 
         assert_eq!(
-            *mock_ui.notify_result_calls.borrow(),
+            mock_ui.notify_result_calls(),
             1,
             "UI should only be notified if start() was called in NotStarted state"
         );
@@ -483,7 +422,7 @@ mod tests {
         assert!(matches!(result, Ok(_)), "There should still be a result");
 
         assert_eq!(
-            *mock_ui.notify_result_calls.borrow(),
+            mock_ui.notify_result_calls(),
             1,
             "UI should be notified only once"
         );
@@ -491,15 +430,17 @@ mod tests {
 
     #[test]
     fn full_game_player_1_wins() {
-        let mock_ui = MockUi::with_expected_moves(vec![
-            BoardMove::try_new(1).unwrap(),
-            BoardMove::try_new(7).unwrap(),
-            BoardMove::try_new(9).unwrap(),
-            BoardMove::try_new(5).unwrap(),
-            BoardMove::try_new(3).unwrap(),
-            BoardMove::try_new(6).unwrap(),
-            BoardMove::try_new(2).unwrap(), // Player 1 wins
-        ]);
+        let mock_ui = MockUi::builder()
+            .expected_moves(vec![
+                BoardMove::try_new(1).unwrap(),
+                BoardMove::try_new(7).unwrap(),
+                BoardMove::try_new(9).unwrap(),
+                BoardMove::try_new(5).unwrap(),
+                BoardMove::try_new(3).unwrap(),
+                BoardMove::try_new(6).unwrap(),
+                BoardMove::try_new(2).unwrap(), // Player 1 wins
+            ])
+            .build();
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
 
@@ -512,7 +453,7 @@ mod tests {
         }
 
         assert_eq!(
-            *mock_ui.notify_result_calls.borrow(),
+            mock_ui.notify_result_calls(),
             1,
             "Game should notify player about the result via UI"
         );
@@ -520,17 +461,19 @@ mod tests {
 
     #[test]
     fn full_game_draw() {
-        let mock_ui = MockUi::with_expected_moves(vec![
-            BoardMove::try_new(9).unwrap(),
-            BoardMove::try_new(5).unwrap(),
-            BoardMove::try_new(7).unwrap(),
-            BoardMove::try_new(8).unwrap(),
-            BoardMove::try_new(2).unwrap(),
-            BoardMove::try_new(1).unwrap(),
-            BoardMove::try_new(6).unwrap(),
-            BoardMove::try_new(3).unwrap(),
-            BoardMove::try_new(4).unwrap(), // Draw
-        ]);
+        let mock_ui = MockUi::builder()
+            .expected_moves(vec![
+                BoardMove::try_new(9).unwrap(),
+                BoardMove::try_new(5).unwrap(),
+                BoardMove::try_new(7).unwrap(),
+                BoardMove::try_new(8).unwrap(),
+                BoardMove::try_new(2).unwrap(),
+                BoardMove::try_new(1).unwrap(),
+                BoardMove::try_new(6).unwrap(),
+                BoardMove::try_new(3).unwrap(),
+                BoardMove::try_new(4).unwrap(), // Draw
+            ])
+            .build();
         let p1 = Player::Human(String::from("Steve"));
         let p2 = Player::Human(String::from("Another Steve"));
 
@@ -542,7 +485,7 @@ mod tests {
         );
 
         assert_eq!(
-            *mock_ui.notify_result_calls.borrow(),
+            mock_ui.notify_result_calls(),
             1,
             "Game should notify player about the result via UI"
         );
@@ -550,7 +493,7 @@ mod tests {
 
     #[test]
     fn cpu_vs_cpu_always_draws() {
-        let mock_ui = MockUi::new();
+        let mock_ui = MockUi::builder().build();
         let p1 = Player::CPU;
         let p2 = Player::CPU;
 

@@ -84,71 +84,12 @@ impl<'a, T: Ui> TicTacToe<'a, T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::board::{Board, BoardMove};
-    use std::cell::RefCell;
-
     use super::*;
-
-    struct MockUi {
-        update_scores_count: RefCell<u32>,
-        expected_names: RefCell<Vec<String>>,
-    }
-
-    impl Ui for MockUi {
-        fn get_move(&self, _player_name: &str, _additional_message: Option<&str>) -> BoardMove {
-            panic!("get_move shouldn't be called");
-        }
-
-        fn update_board(&self, _board: &Board) {
-            panic!("update_board shouldn't be called");
-        }
-
-        fn notify_result(&self, _result: &GameResult) {
-            panic!("notify_result shouldn't be called");
-        }
-
-        fn get_player_name(&self, _player_name: &str) -> String {
-            self.expected_names.borrow_mut().remove(0) // Make sure there are enough fake names
-        }
-
-        fn select_mode(&self) -> GameMode {
-            panic!("select_mode shouldn't be called");
-        }
-
-        fn keep_playing(&self) -> bool {
-            panic!("keep_playing shouldn't be called");
-        }
-
-        fn update_scores(
-            &self,
-            _player1_name: &str,
-            _player1_score: i32,
-            _player2_name: &str,
-            _player2_score: i32,
-        ) {
-            *self.update_scores_count.borrow_mut() += 1;
-        }
-    }
-
-    impl MockUi {
-        fn new() -> MockUi {
-            MockUi {
-                update_scores_count: RefCell::new(0),
-                expected_names: RefCell::new(vec![]),
-            }
-        }
-
-        fn with_expected_names(names: Vec<String>) -> MockUi {
-            MockUi {
-                update_scores_count: RefCell::new(0),
-                expected_names: RefCell::new(names),
-            }
-        }
-    }
+    use crate::ui::tests::MockUi;
 
     #[test]
     fn update_scores() {
-        let mock_ui = MockUi::new();
+        let mock_ui = MockUi::builder().build();
         let human = Player::Human(String::from("Steve"));
         let cpu = Player::CPU;
 
@@ -177,7 +118,7 @@ mod tests {
         assert_eq!(ttt.scores, (1, 1), "Draw shouldn't change the score");
 
         assert_eq!(
-            *mock_ui.update_scores_count.borrow(),
+            mock_ui.update_scores_count(),
             3,
             "UI should be notified for every score update (even if it's a draw)"
         );
@@ -185,12 +126,14 @@ mod tests {
 
     #[test]
     fn create_players() {
-        let mock_ui = MockUi::with_expected_names(vec![
-            String::from("Steve"),
-            String::from("Second Steve"),
-            String::from("Llama"),
-            String::from("Elon"),
-        ]);
+        let mock_ui = MockUi::builder()
+            .expected_names(vec![
+                String::from("Steve"),
+                String::from("Second Steve"),
+                String::from("Llama"),
+                String::from("Elon"),
+            ])
+            .build();
 
         let mut ttt = TicTacToe::new(&mock_ui);
 
