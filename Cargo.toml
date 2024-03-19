@@ -3,6 +3,7 @@ name = "tic-tac-toe"
 version = "0.5.0"
 edition = "2021"
 license = "MIT"
+description = "Tic-tac-toe in terminal! Play against another player locally or against the CPU (minimax algorithm)."
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
