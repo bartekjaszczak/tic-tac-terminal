@@ -24,7 +24,7 @@ impl<'a, T: Ui> TicTacToe<'a, T> {
     /// # Examples
     ///
     /// ```
-    /// use tic_tac_toe::{TerminalUi, TicTacToe};
+    /// use tic_tac_terminal::{TerminalUi, TicTacToe};
     ///
     /// let ui = TerminalUi::new();
     /// let game = TicTacToe::new(&ui);
@@ -42,7 +42,7 @@ impl<'a, T: Ui> TicTacToe<'a, T> {
     /// # Examples
     ///
     /// ```no_run
-    /// use tic_tac_toe::{TerminalUi, TicTacToe};
+    /// use tic_tac_terminal::{TerminalUi, TicTacToe};
     ///
     /// let ui = TerminalUi::new();
     /// let mut game = TicTacToe::new(&ui);

@@ -1,6 +1,6 @@
 [package]
-name = "tic-tac-toe"
-version = "0.5.0"
+name = "tic-tac-terminal"
+version = "1.0.0"
 edition = "2021"
 license = "MIT"
 description = "Tic-tac-toe in terminal! Play against another player locally or against the CPU (minimax algorithm)."

@@ -154,7 +154,7 @@ impl TerminalUi {
     /// # Examples
     ///
     /// ```
-    /// use tic_tac_toe::TerminalUi;
+    /// use tic_tac_terminal::TerminalUi;
     ///
     /// let ui = TerminalUi::new();
     /// ```

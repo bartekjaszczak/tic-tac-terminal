@@ -1,4 +1,4 @@
-use tic_tac_toe::{TicTacToe, TerminalUi};
+use tic_tac_terminal::{TicTacToe, TerminalUi};
 
 fn main() {
     let ui = TerminalUi::new();
