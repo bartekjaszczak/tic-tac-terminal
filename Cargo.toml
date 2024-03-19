@@ -1,9 +1,12 @@
 [package]
 name = "tic-tac-terminal"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 license = "MIT"
 description = "Tic-tac-toe in terminal! Play against another player locally or against the CPU (minimax algorithm)."
+authors = ["Bartłomiej Jaszczak"]
+repository = "https://gitlab.com/bartekjaszczak/tic-tac-terminal"
+keywords = ["minimax", "tic-tac-toe", "game", "terminal"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
